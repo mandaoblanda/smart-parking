@@ -573,7 +573,7 @@ anpr: {
 
 barrier: {
   icon:'🚧', layer:'Fizički sloj', title:'Rampa — kontrola pristupa',
-  desc:'Elektromotor rotira ruku za ~80° za ~1 sekundu. Fotoćelija stalno prati IR zrak ispod ruke — ako je prekinut, motor se momentalno zaustavlja. Fail-open: bez struje, rampa ostaje otvorena (bezbednosni standard).',
+  desc:'Elektromotor rotira ruku za ~80° za ~1 sekundu. Fotoćelija stalno prati IR zrak ispod ruke — ako je prekinut, motor se momentalno zaustavlja. Fotoćelija je neaktivna tokom gubitka napajanja i noćnog režima, kada rampa ostaje otvorena kao bezbednosno podrazumevano stanje.',
   specs:[
     {l:'Vreme otv.',v:'~1 sekunda'},
     {l:'Fail mode',v:'OPEN (bez struje)'},
