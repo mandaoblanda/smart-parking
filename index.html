@@ -76,7 +76,7 @@ header p { color: var(--muted); font-size: 13px; max-width: 520px; margin: 0 aut
 .layer-icon { font-size: 16px; }
 .layer-name {
   font-size: 11px; font-weight: 700; letter-spacing: 1.2px;
-  text-transform: uppercase; color: var(--muted);
+  text-transform: uppercase; color: rgba(255,255,255,0.9);
 }
 .layer-sub { font-size: 11px; color: #566070; margin-left: auto; }
 
@@ -130,10 +130,10 @@ header p { color: var(--muted); font-size: 13px; max-width: 520px; margin: 0 aut
 .layer-edge     { border-color: rgba(52,212,160,.2); }
 .layer-cloud    { border-color: rgba(79,142,247,.2); }
 .layer-user     { border-color: rgba(167,139,250,.2); }
-.layer-physical .layer-name { color: var(--warn); }
-.layer-edge     .layer-name { color: var(--accent2); }
-.layer-cloud    .layer-name { color: var(--accent); }
-.layer-user     .layer-name { color: #a78bfa; }
+.layer-physical .layer-name { color: rgba(255,255,255,0.9); }
+.layer-edge     .layer-name { color: rgba(255,255,255,0.9); }
+.layer-cloud    .layer-name { color: rgba(255,255,255,0.9); }
+.layer-user     .layer-name { color: rgba(255,255,255,0.9); }
 
 /* ── CONNECTOR LINES ────────────────────────────────── */
 .connector {
@@ -281,20 +281,34 @@ header p { color: var(--muted); font-size: 13px; max-width: 520px; margin: 0 aut
   <div class="header-tag">IoT · Forenzička analiza</div>
   <h1>Smart Parking sistem</h1>
   <p>Klikni na bilo koju komponentu da vidiš kako funkcioniše, koje podatke generiše i zašto je bitna za forenzičku analizu.</p>
-  <a href="https://mandaoblanda.github.io/smart-parking-sim/" target="_blank" style="
-    display: inline-flex; align-items: center; gap: 8px;
-    margin-top: 20px;
-    padding: 10px 22px;
-    background: rgba(79,142,247,.12);
-    border: 1px solid rgba(79,142,247,.4);
-    border-radius: 99px;
-    color: #4f8ef7;
-    font-size: 13px; font-weight: 600;
-    text-decoration: none;
-    transition: all .18s;
-  " onmouseover="this.style.background='rgba(79,142,247,.22)'" onmouseout="this.style.background='rgba(79,142,247,.12)'">
-    ▶ Otvori live simulaciju sistema
-  </a>
+  <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:20px">
+    <a href="https://mandaoblanda.github.io/smart-parking-sim/" target="_blank" style="
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 22px;
+      background: rgba(79,142,247,.12);
+      border: 1px solid rgba(79,142,247,.4);
+      border-radius: 99px;
+      color: #4f8ef7;
+      font-size: 13px; font-weight: 600;
+      text-decoration: none;
+      transition: all .18s;
+    " onmouseover="this.style.background='rgba(79,142,247,.22)'" onmouseout="this.style.background='rgba(79,142,247,.12)'">
+      ▶ Otvori live simulaciju sistema
+    </a>
+    <a href="https://raw.githubusercontent.com/mandaoblanda/smart-parking/main/patentna_prijava.docx" download="Patentna_prijava_SmartParking.docx" style="
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 22px;
+      background: rgba(52,212,160,.10);
+      border: 1px solid rgba(52,212,160,.35);
+      border-radius: 99px;
+      color: #34d4a0;
+      font-size: 13px; font-weight: 600;
+      text-decoration: none;
+      transition: all .18s;
+    " onmouseover="this.style.background='rgba(52,212,160,.2)'" onmouseout="this.style.background='rgba(52,212,160,.10)'">
+      ⬇ Preuzmi patentnu prijavu (.docx)
+    </a>
+  </div>
 </header>
 <p class="hint">↓ &nbsp; Klikni na komponentu &nbsp; <span>→</span> &nbsp; Otvara se panel sa objašnjenjem i simulacijom</p>
 
@@ -309,32 +323,37 @@ header p { color: var(--muted); font-size: 13px; max-width: 520px; margin: 0 aut
       <span class="layer-sub">Hardver na terenu</span>
     </div>
     <div class="nodes">
-      <div class="node" onclick="showNode('sensor')">
+      <div class="node" data-node="inductive">
+        <div class="node-icon">🔁</div>
+        <div class="node-label">Indukovana petlja</div>
+        <div class="node-tag">Ispred rampe</div>
+      </div>
+      <div class="node" data-node="sensor">
         <div class="node-icon">📡</div>
         <div class="node-label">Ultrazvučni senzor</div>
         <div class="node-tag">HC-SR04</div>
       </div>
-      <div class="node" onclick="showNode('camera')">
+      <div class="node" data-node="camera">
         <div class="node-icon">📷</div>
         <div class="node-label">Nadzorna kamera</div>
         <div class="node-tag">IP · RTSP</div>
       </div>
-      <div class="node" onclick="showNode('anpr')">
+      <div class="node" data-node="anpr">
         <div class="node-icon">🔍</div>
         <div class="node-label">ANPR kamera</div>
         <div class="node-tag">OCR tablice</div>
       </div>
-      <div class="node" onclick="showNode('barrier')">
+      <div class="node" data-node="barrier">
         <div class="node-icon">🚧</div>
         <div class="node-label">Rampa</div>
         <div class="node-tag">Motor + fotoćelija</div>
       </div>
-      <div class="node" onclick="showNode('display')">
+      <div class="node" data-node="display">
         <div class="node-icon">🔢</div>
         <div class="node-label">LED displej</div>
         <div class="node-tag">Slobodna mesta</div>
       </div>
-      <div class="node" onclick="showNode('ups')">
+      <div class="node" data-node="ups">
         <div class="node-icon">🔋</div>
         <div class="node-label">UPS</div>
         <div class="node-tag">Baterija · 25 min</div>
@@ -352,22 +371,22 @@ header p { color: var(--muted); font-size: 13px; max-width: 520px; margin: 0 aut
       <span class="layer-sub">Lokalni kontroler na lokaciji</span>
     </div>
     <div class="nodes">
-      <div class="node" onclick="showNode('rpi')">
+      <div class="node" data-node="rpi">
         <div class="node-icon">🤖</div>
         <div class="node-label">RPi kontroler</div>
         <div class="node-tag">RISC · edge</div>
       </div>
-      <div class="node" onclick="showNode('mqtt')">
+      <div class="node" data-node="mqtt">
         <div class="node-icon">📨</div>
         <div class="node-label">MQTT broker</div>
         <div class="node-tag">Mosquitto</div>
       </div>
-      <div class="node" onclick="showNode('localdb')">
+      <div class="node" data-node="localdb">
         <div class="node-icon">🗄️</div>
         <div class="node-label">Lokalna baza</div>
         <div class="node-tag">SQLite · offline</div>
       </div>
-      <div class="node" onclick="showNode('watchdog')">
+      <div class="node" data-node="watchdog">
         <div class="node-icon">⏱️</div>
         <div class="node-label">Watchdog timer</div>
         <div class="node-tag">Auto-restart</div>
@@ -385,27 +404,27 @@ header p { color: var(--muted); font-size: 13px; max-width: 520px; margin: 0 aut
       <span class="layer-sub">Centralni backend i baza podataka</span>
     </div>
     <div class="nodes">
-      <div class="node" onclick="showNode('api')">
+      <div class="node" data-node="api">
         <div class="node-icon">⚡</div>
         <div class="node-label">REST API</div>
         <div class="node-tag">Backend logika</div>
       </div>
-      <div class="node" onclick="showNode('postgres')">
+      <div class="node" data-node="postgres">
         <div class="node-icon">🐘</div>
         <div class="node-label">PostgreSQL</div>
         <div class="node-tag">Glavna baza</div>
       </div>
-      <div class="node" onclick="showNode('ai')">
+      <div class="node" data-node="ai">
         <div class="node-icon">🧠</div>
         <div class="node-label">AI servis</div>
         <div class="node-tag">Vision · OCR</div>
       </div>
-      <div class="node" onclick="showNode('payment')">
+      <div class="node" data-node="payment">
         <div class="node-icon">💳</div>
         <div class="node-label">Payment API</div>
         <div class="node-tag">Naplata</div>
       </div>
-      <div class="node" onclick="showNode('crossref')">
+      <div class="node" data-node="crossref">
         <div class="node-icon">🔗</div>
         <div class="node-label">Cross-reference</div>
         <div class="node-tag">T1 vs T2 · 3 izvora</div>
@@ -423,22 +442,22 @@ header p { color: var(--muted); font-size: 13px; max-width: 520px; margin: 0 aut
       <span class="layer-sub">Interfejsi za korisnike i administratore</span>
     </div>
     <div class="nodes">
-      <div class="node" onclick="showNode('mobileapp')">
+      <div class="node" data-node="mobileapp">
         <div class="node-icon">📱</div>
         <div class="node-label">Mobilna aplikacija</div>
         <div class="node-tag">iOS · Android</div>
       </div>
-      <div class="node" onclick="showNode('admin')">
+      <div class="node" data-node="admin">
         <div class="node-icon">🖥️</div>
         <div class="node-label">Admin panel</div>
         <div class="node-tag">Web dashboard</div>
       </div>
-      <div class="node" onclick="showNode('guest')">
+      <div class="node" data-node="guest">
         <div class="node-icon">🎫</div>
         <div class="node-label">Gost korisnik</div>
         <div class="node-tag">Automat · tiket</div>
       </div>
-      <div class="node" onclick="showNode('forensic')">
+      <div class="node" data-node="forensic">
         <div class="node-icon">🔎</div>
         <div class="node-label">Forenzički log</div>
         <div class="node-tag">Rekonstrukcija</div>
@@ -465,6 +484,27 @@ header p { color: var(--muted); font-size: 13px; max-width: 520px; margin: 0 aut
 /* ── NODE DATA ──────────────────────────────────────── */
 const nodes = {
 
+inductive: {
+  icon:'🔁', layer:'Fizički sloj', title:'Indukovana petlja — okidač za ANPR',
+  desc:'Žica ugrađena u asfalt ispred ulazne i izlazne rampe. Kada vozilo metalnog kućišta prođe iznad nje, menja se elektromagnetno polje što generiše signal. Taj signal okida ANPR kameru da snimi tablicu — bez petlje, kamera ne bi znala kada da okine.',
+  specs:[
+    {l:'Princip',v:'elektromagnetna indukcija'},
+    {l:'Dubina',v:'3–5 cm u asfaltu'},
+    {l:'Okidanje',v:'< 50 ms'},
+    {l:'Okida',v:'ANPR kameru'},
+    {l:'Pouzdanost',v:'>99.5%'},
+    {l:'Zamena',v:'radar ili IR senzor'},
+  ],
+  bullets:[
+    'Detektuje samo metalna kućišta — ne reaguje na pešake ili bicikliste',
+    'Svaki okidaj se loguje sa timestampom — forenzički trag svakog prolaza',
+    'Dva okidaja bez ANPR zapisa → tailgating alarm',
+    'Kvari se pri oštećenju asfalta — backup: radar senzor iznad rampe',
+  ],
+  forensic:'09:14:01 | LOOP_ENTRY | triggered | metal_detected\n09:14:02 | ANPR_ENTRY | BG123AB | conf:0.97 | triggered_by:loop\n09:14:07 | LOOP_EXIT  | triggered | ANPR_EXIT → session_close',
+  sim: null
+},
+
 sensor: {
   icon:'📡', layer:'Fizički sloj', title:'Ultrazvučni senzor zauzetosti',
   desc:'Montiran iznad svakog parking mesta na visini ~2.5m. Šalje ultrazvučni talas frekvencije 40 kHz i meri vreme povratka. Iz tog vremena izračunava distancu — ako je manja od konfigurabilnog praga (~180 cm), mesto je zauzeto.',
@@ -488,7 +528,7 @@ sensor: {
 
 camera: {
   icon:'📷', layer:'Fizički sloj', title:'Nadzorna kamera — diferencijalni snapshot',
-  desc:'Ne snima kontinuirano — pravi snapshot cele zone svakih 30 minuta. AI poredi snapshot T1 i T2: ako je isto vozilo na istom mestu, sistem zaključuje status bez analize pokreta, svetala, ili putnika. Ovo dramatično smanjuje računske zahteve.',
+  desc:'Snima kontinuirano i čuva snimak lokalno 72 sata. Za AI analizu se ne koristi ceo video — sistem uzima snapshot cele zone svakih 30 minuta (T1 i T2) i poredi ih. Ako je isto vozilo na istom mestu, sistem zaključuje status bez analize pokreta, svetala ili putnika. Kontinuirano snimanje ostaje aktivno i tokom noćnog režima — samo AI analiza se pauzira.',
   specs:[
     {l:'Rezolucija',v:'1080p min'},
     {l:'Interval',v:'30 min (T1→T2)'},
@@ -498,9 +538,12 @@ camera: {
     {l:'Confidence',v:'prag > 85%'},
   ],
   bullets:[
+    'Snima 24/7 — video se čuva lokalno 72h za forenzičke potrebe',
+    'Za AI analizu se uzimaju samo snapshoti svakih 30 min — mnogo manje opterećenje od analize videa',
     'Detektuje: auto, motor, bicikl, trotinet, neoznačena mesta',
     'Ako kamera offline → samo ta zona u degraded modu',
     'Vandalizovana kamera: poslednji snapshot se čuva kao dokaz',
+    'Noćni režim: kamera snima kontinuirano ali AI analiza T1/T2 je isključena radi uštede resursa',
     'Kombinuje se sa senzorima i ANPR za trostruku verifikaciju',
   ],
   forensic:'09:30:00 | CAM_B | snapshot T1 | zone=B | vehicles=4 | OK\n10:00:00 | CAM_B | snapshot T2 | zone=B | vehicles=4\n10:00:01 | OVERSTAY detected | spot=B3 | plate=NS456CD',
@@ -536,7 +579,7 @@ barrier: {
     {l:'Fail mode',v:'OPEN (bez struje)'},
     {l:'Fotoćelija',v:'IR · anti-crush'},
     {l:'Protokol',v:'GPIO → relay'},
-    {l:'Tajmer',v:'auto-close 10s'},
+    {l:'Tajmer',v:'auto-close 8s'},
     {l:'Override',v:'ručni ključ'},
   ],
   bullets:[
@@ -585,7 +628,8 @@ ups: {
     'Nestanak struje u pravo vreme = klasičan napadački vektor',
     'Log: tačan timestamp nestanka i povratka struje',
     'Ako se poklopi sa sumnjivim aktivnostima → forenzički signal',
-    'Planned downtime: vlasnik gasi sistem noću, posebna logika naplate',
+    'Planned downtime (noćni režim): kamere ostaju online i snimaju, AI analiza i naplata zamrznute do jutra',
+    'Jutarnji recovery scan klasifikuje vozila u 3 kategorije: ostala (A), otišla (B), nova (C)',
   ],
   forensic:'23:00:00 | UPS | ac_input=LOST | battery=100% | runtime=25min\n23:18:42 | UPS | battery=20%  | ALERT sent | shutdown_prepare\n23:22:11 | UPS | battery=0%  | system_off | barrier=FAIL-OPEN',
   sim: null
@@ -1084,13 +1128,13 @@ function watchdogSim() {
 /* ── PANEL LOGIC ─────────────────────────────────────── */
 let currentNode = null;
 
-function showNode(id) {
+function showNode(id, clickedEl) {
   const n = nodes[id];
   if (!n) return;
 
   // deactivate all, activate this
   document.querySelectorAll('.node').forEach(el => el.classList.remove('active'));
-  event.currentTarget.classList.add('active');
+  if (clickedEl) clickedEl.classList.add('active');
 
   currentNode = id;
   document.getElementById('panel-icon').textContent    = n.icon;
@@ -1149,6 +1193,14 @@ function closePanel() {
   document.querySelectorAll('.node').forEach(el => el.classList.remove('active'));
   currentNode = null;
 }
+
+
+// Node click listeners
+document.querySelectorAll('.node[data-node]').forEach(el => {
+  el.addEventListener('click', function() {
+    showNode(this.dataset.node, this);
+  });
+});
 
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
 </script>
