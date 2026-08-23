@@ -3,1206 +3,1615 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Smart Parking — Forenzički sistem</title>
+<title>Smart Parking — Simulacija sistema</title>
 <style>
-/* ── TOKENS ─────────────────────────────────────────── */
-:root {
-  --bg:       #0d0f12;
-  --surface:  #141720;
-  --card:     #1c2030;
-  --border:   #2a2f42;
-  --accent:   #4f8ef7;
-  --accent2:  #34d4a0;
-  --warn:     #f5a623;
-  --danger:   #e85454;
-  --muted:    #8892a4;
-  --text:     #e8ecf4;
-  --subtext:  #b0bace;
-  --mono:     'JetBrains Mono', 'Fira Mono', monospace;
-  --sans:     'Inter', system-ui, sans-serif;
-  --radius:   10px;
-  --shadow:   0 4px 24px rgba(0,0,0,.45);
+:root{
+  --bg:#0b0d10;--s1:#12151c;--s2:#181c26;--card:#1d2130;
+  --border:#252a3a;--border2:#2e3450;
+  --accent:#3d8ef0;--green:#2ec27e;--amber:#f0a832;--red:#e8484a;--purple:#9b6df5;
+  --muted:#6b7591;--sub:#9aa3bc;--text:#dde3f0;
+  --mono:'JetBrains Mono','Fira Mono',monospace;
+  --sans:'Inter',system-ui,sans-serif;--r:8px;
 }
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
-body {
-  background: var(--bg); color: var(--text);
-  font-family: var(--sans); font-size: 14px; line-height: 1.6;
-  min-height: 100vh;
-}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13px;line-height:1.5;min-height:100vh}
 
-/* ── HEADER ─────────────────────────────────────────── */
-header {
-  text-align: center; padding: 48px 20px 32px;
-  border-bottom: 1px solid var(--border);
-  background: linear-gradient(180deg, #0d1825 0%, var(--bg) 100%);
-}
-header h1 {
-  font-size: clamp(20px, 3vw, 32px); font-weight: 700; letter-spacing: -.5px;
-  color: var(--text); margin-bottom: 8px;
-}
-header p { color: var(--muted); font-size: 13px; max-width: 520px; margin: 0 auto; }
-.header-tag {
-  display: inline-block; background: rgba(79,142,247,.15);
-  border: 1px solid rgba(79,142,247,.3); color: var(--accent);
-  font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
-  padding: 3px 10px; border-radius: 99px; margin-bottom: 14px;
-}
+.topbar{background:var(--s1);border-bottom:1px solid var(--border);padding:0 20px;display:flex;align-items:center;gap:16px;height:48px;position:sticky;top:0;z-index:50}
+.topbar-logo{font-size:13px;font-weight:700;letter-spacing:.5px}
+.topbar-logo span{color:var(--accent)}
+.topbar-nav{display:flex;gap:4px;margin-left:auto}
+.tab-btn{padding:5px 14px;border-radius:6px;border:1px solid transparent;background:none;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:all .15s}
+.tab-btn:hover{color:var(--text);background:var(--s2)}
+.tab-btn.active{color:var(--text);background:var(--card);border-color:var(--border2)}
+.sys-badge{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin-left:16px;padding-left:16px;border-left:1px solid var(--border)}
+#sys-dot{width:7px;height:7px;border-radius:50%;background:var(--green);transition:background .4s}
+#sys-dot.on{animation:pulse 2s ease-in-out infinite}
+#sys-dot.off{background:#333;animation:none}
+#sys-dot.warn{background:var(--amber);animation:pulse .6s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 
-/* ── HINT ───────────────────────────────────────────── */
-.hint {
-  text-align: center; color: var(--muted); font-size: 12px;
-  padding: 10px 0 0; letter-spacing: .3px;
-}
-.hint span { color: var(--accent); }
+.view{display:none;padding:16px 20px;max-width:1280px;margin:0 auto}
+.view.active{display:block}
 
-/* ── DIAGRAM WRAPPER ────────────────────────────────── */
-.diagram-wrap {
-  max-width: 960px; margin: 0 auto; padding: 28px 16px 40px;
-}
+.grid-main{display:grid;grid-template-columns:320px 1fr 260px;gap:14px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid-2l{display:grid;grid-template-columns:2fr 1fr;gap:14px}
 
-/* ── LAYER ──────────────────────────────────────────── */
-.layer {
-  border: 1px solid var(--border); border-radius: var(--radius);
-  margin-bottom: 14px; overflow: visible; position: relative;
-  background: var(--surface);
-  transition: border-color .25s;
-}
-.layer:hover { border-color: #3a4260; }
-.layer-header {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 16px 8px;
-}
-.layer-icon { font-size: 16px; }
-.layer-name {
-  font-size: 11px; font-weight: 700; letter-spacing: 1.2px;
-  text-transform: uppercase; color: rgba(255,255,255,0.9);
-}
-.layer-sub { font-size: 11px; color: #566070; margin-left: auto; }
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+.card-head{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.card-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
+.card-body{padding:14px}
+.card-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
 
-/* ── NODE GRID ──────────────────────────────────────── */
-.nodes {
-  display: flex; flex-wrap: wrap; gap: 10px;
-  padding: 0 12px 14px;
-}
+/* MAP */
+.map-wrap{padding:12px}
+.zone-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.zone-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.spot-row{display:flex;gap:7px;margin-bottom:7px;flex-wrap:wrap}
+.spot{width:64px;height:50px;border-radius:6px;border:1.5px solid var(--border2);background:var(--s2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;transition:all .2s;position:relative;user-select:none}
+.spot:hover{border-color:var(--accent);transform:translateY(-1px)}
+.spot.occ{background:rgba(232,72,74,.1);border-color:rgba(232,72,74,.4)}
+.spot.reserved{background:rgba(155,109,245,.1);border-color:rgba(155,109,245,.35)}
+.spot.overstay{background:rgba(240,168,50,.12);border-color:var(--amber);animation:flash .9s ease-in-out infinite alternate}
+.spot.session{background:rgba(61,142,240,.1);border-color:rgba(61,142,240,.4)}
+.spot.offline{background:rgba(107,117,145,.06);border-color:rgba(107,117,145,.2);opacity:.5;cursor:default}
+.spot-id{font-size:10px;font-weight:700;color:var(--sub)}
+.spot-plate{font-size:8px;color:var(--muted);font-family:var(--mono)}
+.spot-status{width:6px;height:6px;border-radius:50%;background:var(--green)}
+.spot.occ .spot-status,.spot.session .spot-status{background:var(--red)}
+.spot.reserved .spot-status{background:var(--purple)}
+.spot.overstay .spot-status{background:var(--amber)}
+.spot.offline .spot-status{background:#444}
+.cam-badge{position:absolute;top:2px;right:3px;font-size:8px;background:rgba(61,142,240,.15);color:var(--accent);border-radius:3px;padding:0 3px}
+.cam-badge.offline{background:rgba(232,72,74,.15);color:var(--red)}
+@keyframes flash{from{border-color:var(--amber)}to{border-color:rgba(240,168,50,.25)}}
 
-/* ── NODE ───────────────────────────────────────────── */
-.node {
-  display: flex; flex-direction: column; align-items: center; gap: 5px;
-  padding: 10px 12px 9px;
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius); cursor: pointer;
-  min-width: 90px; flex: 1; max-width: 130px;
-  transition: all .18s; position: relative; text-align: center;
-  user-select: none;
-}
-.node:hover {
-  border-color: var(--accent); background: #1e2540;
-  transform: translateY(-2px); box-shadow: 0 6px 20px rgba(79,142,247,.18);
-}
-.node.active {
-  border-color: var(--accent); background: rgba(79,142,247,.1);
-  box-shadow: 0 0 0 2px rgba(79,142,247,.25);
-}
-.node-icon { font-size: 22px; line-height: 1; }
-.node-label {
-  font-size: 10px; font-weight: 600; color: var(--subtext);
-  line-height: 1.3; letter-spacing: .2px;
-}
-.node-tag {
-  font-size: 9px; color: var(--muted);
-  background: rgba(255,255,255,.05); border-radius: 4px;
-  padding: 1px 5px;
-}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px}
+.stat-num{font-size:24px;font-weight:700;line-height:1;margin-bottom:3px;transition:color .3s}
+.stat-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px}
 
-/* layer color accents on nodes */
-.layer-physical .node:hover, .layer-physical .node.active { border-color: var(--warn); background: rgba(245,166,35,.08); box-shadow: 0 6px 20px rgba(245,166,35,.15); }
-.layer-physical .node.active { box-shadow: 0 0 0 2px rgba(245,166,35,.25); }
-.layer-edge    .node:hover, .layer-edge    .node.active { border-color: var(--accent2); background: rgba(52,212,160,.08); box-shadow: 0 6px 20px rgba(52,212,160,.15); }
-.layer-edge    .node.active { box-shadow: 0 0 0 2px rgba(52,212,160,.25); }
-.layer-cloud   .node:hover, .layer-cloud   .node.active { border-color: var(--accent); background: rgba(79,142,247,.08); box-shadow: 0 6px 20px rgba(79,142,247,.15); }
-.layer-cloud   .node.active { box-shadow: 0 0 0 2px rgba(79,142,247,.25); }
-.layer-user    .node:hover, .layer-user    .node.active { border-color: #a78bfa; background: rgba(167,139,250,.08); box-shadow: 0 6px 20px rgba(167,139,250,.15); }
-.layer-user    .node.active { box-shadow: 0 0 0 2px rgba(167,139,250,.25); }
+.log-wrap{height:100%;display:flex;flex-direction:column}
+.log-body{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:2px;min-height:280px;max-height:480px}
+.log-entry{display:grid;grid-template-columns:52px 1fr;gap:6px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.03);font-family:var(--mono);font-size:10px;line-height:1.5}
+.log-ts{color:var(--muted)}
+.log-msg{color:var(--sub)}
+.log-ok .log-msg{color:var(--green)}
+.log-err .log-msg{color:var(--red)}
+.log-warn .log-msg{color:var(--amber)}
+.log-info .log-msg{color:var(--accent)}
+.log-sys .log-msg{color:var(--purple)}
 
-/* layer border colors */
-.layer-physical { border-color: rgba(245,166,35,.25); }
-.layer-edge     { border-color: rgba(52,212,160,.2); }
-.layer-cloud    { border-color: rgba(79,142,247,.2); }
-.layer-user     { border-color: rgba(167,139,250,.2); }
-.layer-physical .layer-name { color: rgba(255,255,255,0.9); }
-.layer-edge     .layer-name { color: rgba(255,255,255,0.9); }
-.layer-cloud    .layer-name { color: rgba(255,255,255,0.9); }
-.layer-user     .layer-name { color: rgba(255,255,255,0.9); }
+.btn{padding:6px 14px;border-radius:6px;border:1px solid var(--border2);background:var(--s2);color:var(--sub);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:all .15s}
+.btn:hover:not(:disabled){background:var(--card);color:var(--text)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-primary:hover:not(:disabled){background:#2d7de0}
+.btn-danger{background:rgba(232,72,74,.15);border-color:rgba(232,72,74,.4);color:var(--red)}
+.btn-danger:hover:not(:disabled){background:rgba(232,72,74,.25)}
+.btn-green{background:rgba(46,194,126,.15);border-color:rgba(46,194,126,.4);color:var(--green)}
+.btn-amber{background:rgba(240,168,50,.12);border-color:rgba(240,168,50,.4);color:var(--amber)}
 
-/* ── CONNECTOR LINES ────────────────────────────────── */
-.connector {
-  display: flex; align-items: center; justify-content: center;
-  height: 20px; color: var(--border); font-size: 11px;
-  letter-spacing: 2px; opacity: .6;
-}
+.upload-zone{border:2px dashed var(--border2);border-radius:var(--r);padding:18px;text-align:center;cursor:pointer;transition:all .2s;position:relative}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--accent);background:rgba(61,142,240,.05)}
+.upload-zone input{display:none}
+.upload-hint{font-size:11px;color:var(--muted);margin-top:4px}
 
-/* ── DETAIL PANEL ───────────────────────────────────── */
-#detail-panel {
-  position: fixed; right: 0; top: 0; bottom: 0; width: 440px;
-  background: var(--surface); border-left: 1px solid var(--border);
-  overflow-y: auto; z-index: 100;
-  transform: translateX(100%); transition: transform .28s cubic-bezier(.4,0,.2,1);
-  display: flex; flex-direction: column;
-}
-#detail-panel.open { transform: translateX(0); }
+.plate-display{font-family:var(--mono);font-size:26px;font-weight:700;letter-spacing:5px;text-align:center;background:#1a1600;border:2px solid var(--amber);border-radius:8px;padding:10px;color:var(--text);margin:8px 0}
+.conf-bar-wrap{display:flex;align-items:center;gap:8px;margin:6px 0}
+.conf-bar-track{flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden}
+.conf-bar-fill{height:100%;border-radius:4px;transition:width .5s ease}
 
-.panel-head {
-  padding: 20px 20px 14px; border-bottom: 1px solid var(--border);
-  position: sticky; top: 0; background: var(--surface); z-index: 10;
-  display: flex; align-items: flex-start; gap: 12px;
-}
-.panel-icon { font-size: 30px; line-height: 1; flex-shrink: 0; }
-.panel-title-wrap { flex: 1; min-width: 0; }
-.panel-eyebrow { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 3px; }
-.panel-title { font-size: 17px; font-weight: 700; color: var(--text); line-height: 1.2; }
-#panel-close {
-  background: none; border: 1px solid var(--border); color: var(--muted);
-  width: 28px; height: 28px; border-radius: 6px; cursor: pointer;
-  font-size: 14px; flex-shrink: 0; transition: all .15s;
-  display: flex; align-items: center; justify-content: center;
-}
-#panel-close:hover { background: var(--card); color: var(--text); }
+#barrier-arm{transform-origin:6px 50%;transition:transform .9s ease-in-out}
+#barrier-arm.open{transform:rotate(-78deg)}
 
-.panel-body { padding: 18px 20px; flex: 1; }
+.verdict{border-radius:var(--r);padding:10px 14px;font-size:12px;line-height:1.6;margin-top:8px}
+.verdict-ok{background:rgba(46,194,126,.1);border:1px solid rgba(46,194,126,.3);color:var(--green)}
+.verdict-warn{background:rgba(240,168,50,.1);border:1px solid rgba(240,168,50,.3);color:var(--amber)}
+.verdict-err{background:rgba(232,72,74,.1);border:1px solid rgba(232,72,74,.3);color:var(--red)}
+.verdict-info{background:rgba(61,142,240,.08);border:1px solid rgba(61,142,240,.25);color:var(--accent)}
 
-/* ── PANEL CONTENT COMPONENTS ───────────────────────── */
-.panel-desc { color: var(--subtext); font-size: 13px; line-height: 1.7; margin-bottom: 18px; }
+.pip-step{flex:1;text-align:center;padding:5px 3px;border-radius:6px;border:1px solid var(--border);background:var(--s2);font-size:9px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;transition:all .3s}
+.pip-step.active{border-color:var(--accent);color:var(--accent);background:rgba(61,142,240,.08)}
+.pip-step.done{border-color:var(--green);color:var(--green);background:rgba(46,194,126,.08)}
+.pip-step.error{border-color:var(--red);color:var(--red);background:rgba(232,72,74,.08)}
+.pipeline{display:flex;align-items:center;gap:4px;margin:10px 0}
+.pip-arrow{color:var(--border2);font-size:10px;flex-shrink:0}
 
-.panel-section { margin-bottom: 20px; }
-.panel-section-title {
-  font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
-  color: var(--muted); margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
-}
-.panel-section-title::after { content:''; flex:1; height:1px; background:var(--border); }
+/* CAM */
+.cam-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px}
+.cam-slot{border:1px solid var(--border2);border-radius:var(--r);overflow:hidden}
+.cam-slot.offline{border-color:rgba(232,72,74,.4)}
+.cam-slot.degraded{border-color:rgba(240,168,50,.35)}
+.cam-slot.night{border-color:rgba(240,168,50,.5);background:rgba(240,168,50,.04)}
+.cam-header{padding:6px 10px;background:var(--s2);border-bottom:1px solid var(--border);font-size:10px;font-weight:700;display:flex;align-items:center;gap:6px}
+.cam-screen{height:100px;background:#070707;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.cam-screen.offline-screen{background:repeating-linear-gradient(45deg,#0f0f0f,#0f0f0f 2px,#0a0a0a 2px,#0a0a0a 8px)}
+.cam-zone-badge{position:absolute;bottom:4px;left:6px;font-size:9px;background:rgba(0,0,0,.75);color:var(--sub);padding:1px 6px;border-radius:4px}
+.cam-spots-mini{font-size:9px;color:var(--muted);text-align:center;padding:4px}
 
-.spec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.spec-item {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: 7px; padding: 8px 10px;
-}
-.spec-label { font-size: 10px; color: var(--muted); margin-bottom: 2px; }
-.spec-val { font-size: 12px; font-weight: 600; color: var(--text); }
+.scenario-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.scenario-card{border:1px solid var(--border2);border-radius:var(--r);padding:11px;cursor:pointer;transition:all .18s;background:var(--s2)}
+.scenario-card:hover{border-color:var(--accent);background:rgba(61,142,240,.06)}
+.scenario-card.running{border-color:var(--amber);background:rgba(240,168,50,.06)}
+.scenario-card.done{border-color:var(--green);background:rgba(46,194,126,.06)}
+.sc-icon{font-size:16px;margin-bottom:5px}
+.sc-title{font-size:12px;font-weight:700;margin-bottom:2px}
+.sc-desc{font-size:10px;color:var(--muted);line-height:1.5}
 
-.bullet-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
-.bullet-list li {
-  font-size: 12px; color: var(--subtext); display: flex; gap: 8px; align-items: flex-start;
-}
-.bullet-list li::before { content: '→'; color: var(--accent); flex-shrink: 0; font-size: 11px; margin-top: 2px; }
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:700;padding:2px 7px;border-radius:99px;letter-spacing:.5px;text-transform:uppercase}
+.tag-g{background:rgba(46,194,126,.15);color:var(--green);border:1px solid rgba(46,194,126,.3)}
+.tag-r{background:rgba(232,72,74,.12);color:var(--red);border:1px solid rgba(232,72,74,.3)}
+.tag-y{background:rgba(240,168,50,.12);color:var(--amber);border:1px solid rgba(240,168,50,.3)}
+.tag-b{background:rgba(61,142,240,.1);color:var(--accent);border:1px solid rgba(61,142,240,.25)}
+.tag-p{background:rgba(155,109,245,.1);color:var(--purple);border:1px solid rgba(155,109,245,.3)}
 
-.forensic-box {
-  background: rgba(79,142,247,.07); border: 1px solid rgba(79,142,247,.2);
-  border-radius: 8px; padding: 10px 12px;
-}
-.forensic-box .forensic-label { font-size: 10px; color: var(--accent); font-weight: 700; letter-spacing: .5px; margin-bottom: 5px; }
-.forensic-box code { font-family: var(--mono); font-size: 10.5px; color: var(--accent2); display: block; line-height: 1.6; }
+.divider{height:1px;background:var(--border);margin:12px 0}
+.flex-row{display:flex;align-items:center;gap:8px}
+.flex-gap{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.mt8{margin-top:8px}.mt12{margin-top:12px}
+.text-muted{color:var(--muted);font-size:11px}
 
-/* ── INTERACTIVE SIMS ───────────────────────────────── */
-.sim-wrap {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: 9px; overflow: hidden;
-}
-.sim-title-bar {
-  padding: 7px 12px; border-bottom: 1px solid var(--border);
-  font-size: 10px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 1px; color: var(--muted);
-  display: flex; align-items: center; gap: 6px;
-}
-.sim-dot { width: 7px; height: 7px; border-radius: 50%; }
-.sim-content { padding: 14px 12px; }
+.receipt{font-family:var(--mono);border:1px solid var(--border2);border-radius:var(--r);overflow:hidden;max-width:280px;margin:0 auto}
+.receipt-head{background:var(--text);color:var(--bg);padding:10px;text-align:center;font-size:11px;font-weight:700;letter-spacing:2px}
+.receipt-body{padding:10px;background:var(--s1)}
+.receipt-row{display:flex;justify-content:space-between;font-size:10px;padding:2px 0;border-bottom:1px dashed var(--border);color:var(--sub)}
+.receipt-total{display:flex;justify-content:space-between;font-size:12px;font-weight:700;padding:6px 0 2px;color:var(--text)}
+.receipt-status{text-align:center;padding:6px;font-size:10px;color:var(--green);border-top:1px solid var(--border)}
 
-/* sim buttons */
-.sbtn {
-  padding: 5px 12px; border-radius: 6px; font-size: 11px; font-weight: 600;
-  cursor: pointer; border: 1px solid var(--border); background: var(--surface);
-  color: var(--subtext); transition: all .15s; font-family: var(--sans);
-}
-.sbtn:hover { background: var(--card); color: var(--text); }
-.sbtn.on-g { background: rgba(52,212,160,.12); border-color: var(--accent2); color: var(--accent2); }
-.sbtn.on-r { background: rgba(232,84,84,.1); border-color: var(--danger); color: var(--danger); }
-.sbtn.on-y { background: rgba(245,166,35,.1); border-color: var(--warn); color: var(--warn); }
-.sbtn.on-b { background: rgba(79,142,247,.1); border-color: var(--accent); color: var(--accent); }
-
-.status-row { display: flex; align-items: center; gap: 8px; margin: 8px 0; }
-.status-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-.status-label { font-size: 12px; font-weight: 700; }
-
-.log-line {
-  font-family: var(--mono); font-size: 10px; color: var(--muted);
-  padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,.03);
-}
-.log-ok { color: var(--accent2); }
-.log-err { color: var(--danger); }
-.log-warn { color: var(--warn); }
-.log-info { color: var(--accent); }
-
-/* anpr upload area */
-.upload-area {
-  border: 2px dashed var(--border); border-radius: 8px;
-  padding: 14px; text-align: center; cursor: pointer;
-  transition: all .18s;
-}
-.upload-area:hover { border-color: var(--accent); background: rgba(79,142,247,.05); }
-
-/* barrier arm animation */
-@keyframes armOpen  { from{ transform: rotate(0deg); transform-origin: left center; } to{ transform: rotate(-75deg); transform-origin: left center; } }
-@keyframes armClose { from{ transform: rotate(-75deg); transform-origin: left center; } to{ transform: rotate(0deg); transform-origin: left center; } }
-@keyframes wdtBlink { 0%,100%{opacity:1} 50%{opacity:.2} }
-@keyframes pulse    { 0%,100%{opacity:1} 50%{opacity:.4} }
-
-/* ── OVERLAY ────────────────────────────────────────── */
-#overlay {
-  display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5);
-  z-index: 99; backdrop-filter: blur(2px);
-}
-#overlay.show { display: block; }
-
-/* ── RESPONSIVE ─────────────────────────────────────── */
-@media (max-width: 680px) {
-  #detail-panel { width: 100%; }
-  .nodes { gap: 7px; }
-  .node { min-width: 72px; padding: 8px 7px; }
-  .node-icon { font-size: 18px; }
-}
+/* OUTAGE */
+.outage-status-box{border-radius:var(--r);padding:12px 14px;text-align:center;transition:all .4s}
+.outage-ok{background:rgba(46,194,126,.08);border:1px solid rgba(46,194,126,.25)}
+.outage-warn{background:rgba(240,168,50,.08);border:1px solid rgba(240,168,50,.3)}
+.outage-err{background:rgba(232,72,74,.08);border:1px solid rgba(232,72,74,.3)}
+.outage-label{font-size:18px;font-weight:700;margin-bottom:4px;transition:color .4s}
 </style>
 </head>
 <body>
 
-<!-- OVERLAY -->
-<div id="overlay" onclick="closePanel()"></div>
-
-<!-- HEADER -->
-<header>
-  <div class="header-tag">IoT · Forenzička analiza</div>
-  <h1>Smart Parking sistem</h1>
-  <p>Klikni na bilo koju komponentu da vidiš kako funkcioniše, koje podatke generiše i zašto je bitna za forenzičku analizu.</p>
-  <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:20px">
-    <a href="https://mandaoblanda.github.io/smart-parking-sim/" target="_blank" style="
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 10px 22px;
-      background: rgba(79,142,247,.12);
-      border: 1px solid rgba(79,142,247,.4);
-      border-radius: 99px;
-      color: #4f8ef7;
-      font-size: 13px; font-weight: 600;
-      text-decoration: none;
-      transition: all .18s;
-    " onmouseover="this.style.background='rgba(79,142,247,.22)'" onmouseout="this.style.background='rgba(79,142,247,.12)'">
-      ▶ Otvori live simulaciju sistema
-    </a>
-    <a href="https://raw.githubusercontent.com/mandaoblanda/smart-parking/main/patentna_prijava.docx" download="Patentna_prijava_SmartParking.docx" style="
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 10px 22px;
-      background: rgba(52,212,160,.10);
-      border: 1px solid rgba(52,212,160,.35);
-      border-radius: 99px;
-      color: #34d4a0;
-      font-size: 13px; font-weight: 600;
-      text-decoration: none;
-      transition: all .18s;
-    " onmouseover="this.style.background='rgba(52,212,160,.2)'" onmouseout="this.style.background='rgba(52,212,160,.10)'">
-      ⬇ Preuzmi patentnu prijavu (.docx)
-    </a>
+<div class="topbar">
+  <div class="topbar-logo">Smart<span>Parking</span> · Simulacija</div>
+  <div class="topbar-nav">
+    <button class="tab-btn active" onclick="setView('anpr',this)">ANPR · Ulaz/Izlaz</button>
+    <button class="tab-btn" onclick="setView('camera',this)">Kamera analitika</button>
+    <button class="tab-btn" onclick="setView('outage',this)">Nestanak struje</button>
   </div>
-</header>
-<p class="hint">↓ &nbsp; Klikni na komponentu &nbsp; <span>→</span> &nbsp; Otvara se panel sa objašnjenjem i simulacijom</p>
+  <div class="sys-badge">
+    <div id="sys-dot" class="on"></div>
+    <span id="sys-label">Sistem aktivan</span>
+  </div>
+</div>
 
-<!-- DIAGRAM -->
-<div class="diagram-wrap">
-
-  <!-- LAYER 1: FIZIČKI -->
-  <div class="layer layer-physical">
-    <div class="layer-header">
-      <span class="layer-icon">⚙️</span>
-      <span class="layer-name">Fizički sloj</span>
-      <span class="layer-sub">Hardver na terenu</span>
-    </div>
-    <div class="nodes">
-      <div class="node" data-node="inductive">
-        <div class="node-icon">🔁</div>
-        <div class="node-label">Indukovana petlja</div>
-        <div class="node-tag">Ispred rampe</div>
-      </div>
-      <div class="node" data-node="sensor">
-        <div class="node-icon">📡</div>
-        <div class="node-label">Ultrazvučni senzor</div>
-        <div class="node-tag">HC-SR04</div>
-      </div>
-      <div class="node" data-node="camera">
-        <div class="node-icon">📷</div>
-        <div class="node-label">Nadzorna kamera</div>
-        <div class="node-tag">IP · RTSP</div>
-      </div>
-      <div class="node" data-node="anpr">
-        <div class="node-icon">🔍</div>
-        <div class="node-label">ANPR kamera</div>
-        <div class="node-tag">OCR tablice</div>
-      </div>
-      <div class="node" data-node="barrier">
-        <div class="node-icon">🚧</div>
-        <div class="node-label">Rampa</div>
-        <div class="node-tag">Motor + fotoćelija</div>
-      </div>
-      <div class="node" data-node="display">
-        <div class="node-icon">🔢</div>
-        <div class="node-label">LED displej</div>
-        <div class="node-tag">Slobodna mesta</div>
-      </div>
-      <div class="node" data-node="ups">
-        <div class="node-icon">🔋</div>
-        <div class="node-label">UPS</div>
-        <div class="node-tag">Baterija · 25 min</div>
-      </div>
-    </div>
+<!-- ══════════════════════════════════════════ -->
+<!-- VIEW 1: ANPR                               -->
+<!-- ══════════════════════════════════════════ -->
+<div class="view active" id="view-anpr">
+  <div class="stats-row" style="margin-top:14px">
+    <div class="stat-card"><div class="stat-num" id="stat-free" style="color:var(--green)">18</div><div class="stat-lbl">Slobodna mesta</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-occ"  style="color:var(--red)">6</div><div class="stat-lbl">Zauzeta mesta</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-sess" style="color:var(--accent)">3</div><div class="stat-lbl">Aktivnih sesija</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-rev"  style="color:var(--amber)">1.440</div><div class="stat-lbl">Prihod danas (RSD)</div></div>
   </div>
 
-  <div class="connector">↕ &nbsp; žičane i bežične veze &nbsp; ↕</div>
-
-  <!-- LAYER 2: EDGE -->
-  <div class="layer layer-edge">
-    <div class="layer-header">
-      <span class="layer-icon">🖥️</span>
-      <span class="layer-name">Edge / lokalni sloj</span>
-      <span class="layer-sub">Lokalni kontroler na lokaciji</span>
+  <div class="grid-main">
+    <!-- MAPA -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-dot" style="background:var(--green)"></div>
+        <div class="card-title">Mapa parkinga</div>
+        <span class="tag tag-g" style="margin-left:auto">LIVE</span>
+      </div>
+      <div class="map-wrap" id="parking-map"></div>
     </div>
-    <div class="nodes">
-      <div class="node" data-node="rpi">
-        <div class="node-icon">🤖</div>
-        <div class="node-label">RPi kontroler</div>
-        <div class="node-tag">RISC · edge</div>
+
+    <!-- ANPR terminal -->
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="card">
+        <div class="card-head">
+          <div class="card-dot" style="background:var(--accent)"></div>
+          <div class="card-title">ANPR terminal — ulaz</div>
+        </div>
+        <div class="card-body">
+          <div class="pipeline">
+            <div class="pip-step" id="pip1">Slika</div><div class="pip-arrow">›</div>
+            <div class="pip-step" id="pip2">OCR</div><div class="pip-arrow">›</div>
+            <div class="pip-step" id="pip3">Baza</div><div class="pip-arrow">›</div>
+            <div class="pip-step" id="pip4">Odluka</div><div class="pip-arrow">›</div>
+            <div class="pip-step" id="pip5">Rampa</div>
+          </div>
+
+          <!-- Upload zone -->
+          <div id="upload-zone" class="upload-zone"
+            onclick="document.getElementById('file-input').click()"
+            ondragover="event.preventDefault();this.classList.add('drag')"
+            ondragleave="this.classList.remove('drag')"
+            ondrop="handleDrop(event)">
+            <input type="file" id="file-input" accept="image/*" onchange="handleFile(event)"/>
+            <div style="font-size:24px;margin-bottom:6px">📸</div>
+            <div style="font-size:13px;font-weight:600">Uploaduj sliku tablice</div>
+            <div class="upload-hint">JPG · PNG · Claude Vision API čita tablicu</div>
+          </div>
+
+          <!-- Demo tablice — uvek vidljive -->
+          <div style="margin-top:10px">
+            <div class="text-muted" style="margin-bottom:6px">Demo tablice (klikni da simuliraš):</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn" onclick="demoPlate('BG 123 AB','registered')">BG 123 AB ✓</button>
+              <button class="btn" onclick="demoPlate('NS 456 CD','reserved')">NS 456 CD ★</button>
+              <button class="btn" onclick="demoPlate('KG 789 EF','blacklist')">KG 789 EF ✕</button>
+              <button class="btn" onclick="demoPlate('NI 321 ZZ','unknown')">NI 321 ZZ ?</button>
+            </div>
+          </div>
+
+          <!-- Loading -->
+          <div id="anpr-loading" style="display:none;text-align:center;padding:18px;color:var(--muted)">
+            <div style="font-size:20px;margin-bottom:6px">⏳</div>
+            <div id="anpr-loading-msg" style="font-size:12px">Analiziramo sliku...</div>
+          </div>
+
+          <!-- Result -->
+          <div id="anpr-result" style="display:none;margin-top:12px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+              <span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px">Očitana tablica</span>
+              <button class="btn" style="font-size:10px;padding:2px 8px" onclick="resetANPR()">✕ Poništi</button>
+            </div>
+            <div class="plate-display" id="anpr-plate">—</div>
+            <div class="conf-bar-wrap">
+              <span style="font-size:10px;color:var(--muted);min-width:70px">Pouzdanost:</span>
+              <div class="conf-bar-track"><div class="conf-bar-fill" id="conf-fill" style="width:0%"></div></div>
+              <span id="conf-val" style="font-size:11px;font-weight:700;min-width:34px;text-align:right">0%</span>
+            </div>
+            <div id="anpr-decision" class="verdict"></div>
+            <div id="anpr-meta" class="flex-gap" style="margin-top:6px"></div>
+          </div>
+        </div>
       </div>
-      <div class="node" data-node="mqtt">
-        <div class="node-icon">📨</div>
-        <div class="node-label">MQTT broker</div>
-        <div class="node-tag">Mosquitto</div>
-      </div>
-      <div class="node" data-node="localdb">
-        <div class="node-icon">🗄️</div>
-        <div class="node-label">Lokalna baza</div>
-        <div class="node-tag">SQLite · offline</div>
-      </div>
-      <div class="node" data-node="watchdog">
-        <div class="node-icon">⏱️</div>
-        <div class="node-label">Watchdog timer</div>
-        <div class="node-tag">Auto-restart</div>
+
+      <!-- RAMPA -->
+      <div class="card">
+        <div class="card-head">
+          <div class="card-dot" id="barrier-dot" style="background:var(--red)"></div>
+          <div class="card-title">Rampa — ulaz</div>
+          <span class="tag tag-r" id="barrier-tag" style="margin-left:auto">ZATVORENA</span>
+        </div>
+        <div class="card-body" style="display:flex;align-items:center;gap:14px">
+          <svg width="190" height="76" viewBox="0 0 190 76">
+            <rect x="10" y="14" width="11" height="52" rx="3" fill="none" stroke="var(--border2)" stroke-width="1.5"/>
+            <circle cx="15" cy="27" r="8" fill="none" stroke="var(--amber)" stroke-width="1.5"/>
+            <text x="10" y="31" style="font-size:7px;fill:var(--amber);font-weight:bold">M</text>
+            <g id="barrier-arm">
+              <rect x="21" y="23" width="108" height="8" rx="3" fill="var(--amber)" opacity=".85"/>
+              <line x1="38" y1="23" x2="38" y2="31" stroke="var(--red)" stroke-width="1.5"/>
+              <line x1="55" y1="23" x2="55" y2="31" stroke="var(--red)" stroke-width="1.5"/>
+              <line x1="72" y1="23" x2="72" y2="31" stroke="var(--red)" stroke-width="1.5"/>
+              <line x1="90" y1="23" x2="90" y2="31" stroke="var(--red)" stroke-width="1.5"/>
+              <circle cx="130" cy="27" r="4" fill="var(--red)" id="barrier-light"/>
+            </g>
+            <line x1="10" y1="67" x2="180" y2="67" stroke="var(--border2)" stroke-width="1.5"/>
+            <circle cx="21" cy="60" r="4" fill="none" stroke="var(--green)" stroke-width="1"/>
+            <line x1="25" y1="60" x2="95" y2="60" stroke="var(--green)" stroke-width=".8" stroke-dasharray="3,2" opacity=".5"/>
+            <circle cx="99" cy="60" r="4" fill="none" stroke="var(--green)" stroke-width="1"/>
+          </svg>
+          <div>
+            <div style="font-size:18px;font-weight:700;color:var(--red);transition:color .4s" id="barrier-status-text">ZATVORENA</div>
+            <div class="text-muted mt8">IR fotoćelija: <span style="color:var(--green)">aktivna</span></div>
+            <div class="text-muted">Fail-safe: <span style="color:var(--sub)">OPEN bez struje</span></div>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div class="connector">↕ &nbsp; MQTT · REST API · internet &nbsp; ↕</div>
-
-  <!-- LAYER 3: CLOUD -->
-  <div class="layer layer-cloud">
-    <div class="layer-header">
-      <span class="layer-icon">☁️</span>
-      <span class="layer-name">Cloud / server sloj</span>
-      <span class="layer-sub">Centralni backend i baza podataka</span>
-    </div>
-    <div class="nodes">
-      <div class="node" data-node="api">
-        <div class="node-icon">⚡</div>
-        <div class="node-label">REST API</div>
-        <div class="node-tag">Backend logika</div>
+    <!-- LOG -->
+    <div class="card log-wrap">
+      <div class="card-head">
+        <div class="card-dot" style="background:var(--accent)"></div>
+        <div class="card-title">Forenzički log</div>
+        <button class="btn" style="margin-left:auto;font-size:10px;padding:3px 8px" onclick="clearLog('log-body')">Obriši</button>
       </div>
-      <div class="node" data-node="postgres">
-        <div class="node-icon">🐘</div>
-        <div class="node-label">PostgreSQL</div>
-        <div class="node-tag">Glavna baza</div>
-      </div>
-      <div class="node" data-node="ai">
-        <div class="node-icon">🧠</div>
-        <div class="node-label">AI servis</div>
-        <div class="node-tag">Vision · OCR</div>
-      </div>
-      <div class="node" data-node="payment">
-        <div class="node-icon">💳</div>
-        <div class="node-label">Payment API</div>
-        <div class="node-tag">Naplata</div>
-      </div>
-      <div class="node" data-node="crossref">
-        <div class="node-icon">🔗</div>
-        <div class="node-label">Cross-reference</div>
-        <div class="node-tag">T1 vs T2 · 3 izvora</div>
-      </div>
+      <div class="log-body" id="log-body"></div>
     </div>
   </div>
 
-  <div class="connector">↕ &nbsp; HTTPS · WebSocket · push notifikacije &nbsp; ↕</div>
-
-  <!-- LAYER 4: KORISNIČKI -->
-  <div class="layer layer-user">
-    <div class="layer-header">
-      <span class="layer-icon">👤</span>
-      <span class="layer-name">Korisnički sloj</span>
-      <span class="layer-sub">Interfejsi za korisnike i administratore</span>
+  <!-- SESIJE -->
+  <div class="card" style="margin-top:14px">
+    <div class="card-head">
+      <div class="card-dot" style="background:var(--accent)"></div>
+      <div class="card-title">Aktivne sesije</div>
     </div>
-    <div class="nodes">
-      <div class="node" data-node="mobileapp">
-        <div class="node-icon">📱</div>
-        <div class="node-label">Mobilna aplikacija</div>
-        <div class="node-tag">iOS · Android</div>
+    <div class="card-body">
+      <table style="width:100%;border-collapse:collapse" id="sessions-table">
+        <thead><tr style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px">
+          <th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--border)">Tablica</th>
+          <th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--border)">Mesto</th>
+          <th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--border)">Ulaz</th>
+          <th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--border)">Trajanje</th>
+          <th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--border)">Iznos</th>
+          <th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--border)">Status</th>
+          <th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--border)">Akcija</th>
+        </tr></thead>
+        <tbody id="sessions-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- VIEW 2: KAMERA ANALITIKA                   -->
+<!-- ══════════════════════════════════════════ -->
+<div class="view" id="view-camera">
+  <div style="padding-top:14px" class="grid-2l">
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="card">
+        <div class="card-head">
+          <div class="card-dot" style="background:var(--purple)"></div>
+          <div class="card-title">Kamera analitički modul</div>
+          <button class="btn" style="margin-left:auto;font-size:10px;padding:3px 10px" onclick="resetCamScenario()">↺ Resetuj</button>
+        </div>
+        <div class="card-body">
+          <p class="text-muted" style="margin-bottom:12px">Odaberi scenario — sistem simulira AI analizu i generiše forenzički log. Ili uploaduj sopstvene T1/T2 slike za pravu Claude API analizu.</p>
+
+          <div class="scenario-grid">
+            <div class="scenario-card" id="sc-overstay"  onclick="runScenario('overstay')"><div class="sc-icon">⏱️</div><div class="sc-title">Overstay detekcija</div><div class="sc-desc">T1 vs T2 — isto vozilo, plaćanje isteklo</div></div>
+            <div class="scenario-card" id="sc-wrongtype" onclick="runScenario('wrongtype')"><div class="sc-icon">🏍️</div><div class="sc-title">Pogrešan tip vozila</div><div class="sc-desc">Motor na mestu za auto</div></div>
+            <div class="scenario-card" id="sc-wrongspot" onclick="runScenario('wrongspot')"><div class="sc-icon">❌</div><div class="sc-title">Pogrešno rezervisano</div><div class="sc-desc">Vozilo parkiralo na drugom mestu</div></div>
+            <div class="scenario-card" id="sc-ghost"     onclick="runScenario('ghost')"><div class="sc-icon">👻</div><div class="sc-title">Duh vozilo</div><div class="sc-desc">Kamera vidi auto — ANPR nema zapis</div></div>
+            <div class="scenario-card" id="sc-sensor"    onclick="runScenario('sensor')"><div class="sc-icon">⚠️</div><div class="sc-title">Greška senzora</div><div class="sc-desc">Senzor FREE — kamera vidi zauzeto</div></div>
+            <div class="scenario-card" id="sc-camfault"  onclick="runScenario('camfault')"><div class="sc-icon">📵</div><div class="sc-title">Kvar kamere</div><div class="sc-desc">CAM_B otkazuje — zona B degraded</div></div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">T1/T2 analiza sa pravim slikama</div>
+          <div class="grid-2" style="margin-bottom:10px">
+            <div>
+              <div class="text-muted" style="margin-bottom:5px">Snapshot T1</div>
+              <div class="upload-zone" style="padding:10px" id="t1-zone" onclick="document.getElementById('t1-input').click()">
+                <input type="file" id="t1-input" accept="image/*" onchange="loadSnap('t1',event)"/>
+                <div id="t1-preview" style="font-size:11px;color:var(--muted)">📷 Klikni ili prevuci</div>
+              </div>
+            </div>
+            <div>
+              <div class="text-muted" style="margin-bottom:5px">Snapshot T2 (+30 min)</div>
+              <div class="upload-zone" style="padding:10px" id="t2-zone" onclick="document.getElementById('t2-input').click()">
+                <input type="file" id="t2-input" accept="image/*" onchange="loadSnap('t2',event)"/>
+                <div id="t2-preview" style="font-size:11px;color:var(--muted)">📷 Klikni ili prevuci</div>
+              </div>
+            </div>
+          </div>
+          <button class="btn btn-primary" id="analyze-btn" onclick="analyzeSnapshots()" disabled>🧠 Analiziraj sa Claude API</button>
+        </div>
       </div>
-      <div class="node" data-node="admin">
-        <div class="node-icon">🖥️</div>
-        <div class="node-label">Admin panel</div>
-        <div class="node-tag">Web dashboard</div>
+
+      <div class="card" id="cam-result-card" style="display:none">
+        <div class="card-head">
+          <div class="card-dot" id="cr-dot" style="background:var(--accent)"></div>
+          <div class="card-title">Rezultat analize</div>
+          <span class="tag" id="cr-tag" style="margin-left:auto"></span>
+        </div>
+        <div class="card-body" id="cam-result-body"></div>
       </div>
-      <div class="node" data-node="guest">
-        <div class="node-icon">🎫</div>
-        <div class="node-label">Gost korisnik</div>
-        <div class="node-tag">Automat · tiket</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="card">
+        <div class="card-head">
+          <div class="card-dot" id="cam-status-dot" style="background:var(--green)"></div>
+          <div class="card-title">Status kamera</div>
+          <span class="tag tag-g" id="cam-status-tag" style="margin-left:auto">SVE ONLINE</span>
+        </div>
+        <div class="cam-grid" id="cam-status-grid"></div>
       </div>
-      <div class="node" data-node="forensic">
-        <div class="node-icon">🔎</div>
-        <div class="node-label">Forenzički log</div>
-        <div class="node-tag">Rekonstrukcija</div>
+
+      <div class="card log-wrap">
+        <div class="card-head">
+          <div class="card-dot" style="background:var(--purple)"></div>
+          <div class="card-title">Kamera forenzički log</div>
+          <button class="btn" style="margin-left:auto;font-size:10px;padding:3px 8px" onclick="clearLog('cam-log')">Obriši</button>
+        </div>
+        <div class="log-body" id="cam-log" style="min-height:200px"></div>
       </div>
     </div>
   </div>
+</div>
 
-</div><!-- /diagram-wrap -->
+<!-- ══════════════════════════════════════════ -->
+<!-- VIEW 3: NESTANAK STRUJE                    -->
+<!-- ══════════════════════════════════════════ -->
+<div class="view" id="view-outage">
+  <div style="padding-top:14px" class="grid-2">
+    <div style="display:flex;flex-direction:column;gap:14px">
 
-<!-- DETAIL PANEL -->
-<div id="detail-panel">
-  <div class="panel-head">
-    <div class="panel-icon" id="panel-icon">📡</div>
-    <div class="panel-title-wrap">
-      <div class="panel-eyebrow" id="panel-eyebrow">Fizički sloj</div>
-      <div class="panel-title" id="panel-title">Ultrazvučni senzor</div>
+      <div class="card">
+        <div class="card-head">
+          <div class="card-dot" id="outage-dot" style="background:var(--green)"></div>
+          <div class="card-title">Napajanje sistema</div>
+          <span class="tag tag-g" id="outage-tag" style="margin-left:auto">NORMALAN RAD</span>
+        </div>
+        <div class="card-body">
+          <div class="outage-status-box outage-ok" id="outage-status-box" style="margin-bottom:14px">
+            <div class="outage-label" id="outage-label" style="color:var(--green)">Sistem aktivan</div>
+            <div style="font-size:11px;color:var(--muted)" id="outage-sub">Sve komponente rade normalno</div>
+          </div>
+
+          <div style="margin-bottom:14px">
+            <div class="flex-row" style="margin-bottom:5px">
+              <span class="text-muted">UPS kapacitet</span>
+              <span style="font-size:11px;font-weight:700;margin-left:auto" id="ups-pct">100%</span>
+            </div>
+            <div class="conf-bar-track" style="height:12px">
+              <div class="conf-bar-fill" id="ups-bar" style="width:100%;background:var(--green)"></div>
+            </div>
+            <div class="flex-row" style="margin-top:5px">
+              <span class="text-muted">Izvor: <span id="power-src" style="color:var(--green)">Mreža (AC)</span></span>
+              <span class="text-muted" style="margin-left:auto" id="ups-runtime">~25 min</span>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <button class="btn btn-danger" id="btn-outage"   onclick="triggerOutage()">⚡ Simuliraj nestanak struje</button>
+            <button class="btn btn-green"  id="btn-restore"  onclick="restorePower()" disabled title="Dostupno samo kada nema struje">✓ Vrati napajanje</button>
+            <button class="btn btn-amber"  id="btn-planned"  onclick="triggerPlanned()">🌙 Planirano noćno gašenje</button>
+            <button class="btn"            id="btn-recover"  onclick="runRecovery()" disabled title="Dostupno samo u noćnom režimu ili nakon nestanka struje">🔍 Jutarnji recovery scan</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="reconcile-card" style="display:none">
+        <div class="card-head">
+          <div class="card-dot" style="background:var(--amber)"></div>
+          <div class="card-title">Post-outage reconciliation</div>
+        </div>
+        <div class="card-body" id="reconcile-body"></div>
+      </div>
     </div>
-    <button id="panel-close" onclick="closePanel()">✕</button>
+
+    <div class="card log-wrap">
+      <div class="card-head">
+        <div class="card-dot" style="background:var(--amber)"></div>
+        <div class="card-title">Outage forenzički log</div>
+        <button class="btn" style="margin-left:auto;font-size:10px;padding:3px 8px" onclick="clearLog('outage-log')">Obriši</button>
+      </div>
+      <div class="log-body" id="outage-log" style="min-height:400px"></div>
+    </div>
   </div>
-  <div class="panel-body" id="panel-body"></div>
 </div>
 
 <script>
-/* ── NODE DATA ──────────────────────────────────────── */
-const nodes = {
+/* ════════════════════════════════════════════
+   GLOBALNI STATE
+════════════════════════════════════════════ */
+const RATE = 120;
+const now = () => new Date();
+const ts  = () => now().toTimeString().slice(0,8);
+const fmt = d => d.toTimeString().slice(0,5);
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
 
-inductive: {
-  icon:'🔁', layer:'Fizički sloj', title:'Indukovana petlja — okidač za ANPR',
-  desc:'Žica ugrađena u asfalt ispred ulazne i izlazne rampe. Kada vozilo metalnog kućišta prođe iznad nje, menja se elektromagnetno polje što generiše signal. Taj signal okida ANPR kameru da snimi tablicu — bez petlje, kamera ne bi znala kada da okine.',
-  specs:[
-    {l:'Princip',v:'elektromagnetna indukcija'},
-    {l:'Dubina',v:'3–5 cm u asfaltu'},
-    {l:'Okidanje',v:'< 50 ms'},
-    {l:'Okida',v:'ANPR kameru'},
-    {l:'Pouzdanost',v:'>99.5%'},
-    {l:'Zamena',v:'radar ili IR senzor'},
-  ],
-  bullets:[
-    'Detektuje samo metalna kućišta — ne reaguje na pešake ili bicikliste',
-    'Svaki okidaj se loguje sa timestampom — forenzički trag svakog prolaza',
-    'Dva okidaja bez ANPR zapisa → tailgating alarm',
-    'Kvari se pri oštećenju asfalta — backup: radar senzor iznad rampe',
-  ],
-  forensic:'09:14:01 | LOOP_ENTRY | triggered | metal_detected\n09:14:02 | ANPR_ENTRY | BG123AB | conf:0.97 | triggered_by:loop\n09:14:07 | LOOP_EXIT  | triggered | ANPR_EXIT → session_close',
-  sim: null
-},
-
-sensor: {
-  icon:'📡', layer:'Fizički sloj', title:'Ultrazvučni senzor zauzetosti',
-  desc:'Montiran iznad svakog parking mesta na visini ~2.5m. Šalje ultrazvučni talas frekvencije 40 kHz i meri vreme povratka. Iz tog vremena izračunava distancu — ako je manja od konfigurabilnog praga (~180 cm), mesto je zauzeto.',
-  specs:[
-    {l:'Model',v:'HC-SR04'},
-    {l:'Domet',v:'2 cm – 4 m'},
-    {l:'Tačnost',v:'±3 mm'},
-    {l:'Interval',v:'svakih 500 ms'},
-    {l:'Protokol',v:'GPIO · trigger/echo'},
-    {l:'Potrošnja',v:'~15 mA'},
-  ],
-  bullets:[
-    'Detektuje auto, motor, bicikl, ali ne pravi razliku između tipova',
-    'Pri padu ispod praga → status OCC → MQTT publish → log zapis',
-    'Ako isti senzor ne javlja 60s → sistem ga proglašava offline',
-    'Zamena: magnetni senzori u asfaltu (skuplji, pouzdaniji na kiši)',
-  ],
-  forensic:'2025-04-12 09:14:02 | sensor_id: A3 | OCC | dist: 97cm | 5.6ms\n2025-04-12 11:22:18 | sensor_id: A3 | FREE | dist: 498cm | 28.9ms',
-  sim: 'sensor'
-},
-
-camera: {
-  icon:'📷', layer:'Fizički sloj', title:'Nadzorna kamera — diferencijalni snapshot',
-  desc:'Snima kontinuirano i čuva snimak lokalno 72 sata. Za AI analizu se ne koristi ceo video — sistem uzima snapshot cele zone svakih 30 minuta (T1 i T2) i poredi ih. Ako je isto vozilo na istom mestu, sistem zaključuje status bez analize pokreta, svetala ili putnika. Kontinuirano snimanje ostaje aktivno i tokom noćnog režima — samo AI analiza se pauzira.',
-  specs:[
-    {l:'Rezolucija',v:'1080p min'},
-    {l:'Interval',v:'30 min (T1→T2)'},
-    {l:'Protokol',v:'IP · RTSP stream'},
-    {l:'Pokrivenost',v:'1 kamera = 1 zona'},
-    {l:'Čuvanje',v:'72h lokalno'},
-    {l:'Confidence',v:'prag > 85%'},
-  ],
-  bullets:[
-    'Snima 24/7 — video se čuva lokalno 72h za forenzičke potrebe',
-    'Za AI analizu se uzimaju samo snapshoti svakih 30 min — mnogo manje opterećenje od analize videa',
-    'Detektuje: auto, motor, bicikl, trotinet, neoznačena mesta',
-    'Ako kamera offline → samo ta zona u degraded modu',
-    'Vandalizovana kamera: poslednji snapshot se čuva kao dokaz',
-    'Noćni režim: kamera snima kontinuirano ali AI analiza T1/T2 je isključena radi uštede resursa',
-    'Kombinuje se sa senzorima i ANPR za trostruku verifikaciju',
-  ],
-  forensic:'09:30:00 | CAM_B | snapshot T1 | zone=B | vehicles=4 | OK\n10:00:00 | CAM_B | snapshot T2 | zone=B | vehicles=4\n10:00:01 | OVERSTAY detected | spot=B3 | plate=NS456CD',
-  sim: 'camera-sim'
-},
-
-anpr: {
-  icon:'🔍', layer:'Fizički sloj', title:'ANPR kamera — prepoznavanje tablica',
-  desc:'Automatski čita tablice pri svakom prolasku kroz rampu. Infracrveno osvetljenje osigurava čitanje u mraku i kiši. OCR engine pretvara sliku u string sa confidence scorom. Ispod 85% pouzdanosti → manual review, ne alarm.',
-  specs:[
-    {l:'Tačnost',v:'95–99% (suvo)'},
-    {l:'Okidač',v:'induktivna petlja'},
-    {l:'Osvetljenje',v:'IR · noć/dan'},
-    {l:'Latencija',v:'< 1 sekunda'},
-    {l:'Format',v:'BG 123 AB'},
-    {l:'Confidence',v:'prag 85%'},
-  ],
-  bullets:[
-    'Svaki ulaz/izlaz loguje: tablica, timestamp, slika, odluka',
-    '"Duh vozilo": kamera vidi auto ali ANPR nema zapis o ulasku',
-    'Tailgating: jedan ANPR zapis, dva auta vidljiva na nadzornoj kameri',
-    'Crna lista: rampa se ne otvara, foto dokaz se čuva automatski',
-  ],
-  forensic:'09:14:02 | ANPR_ENTRY | BG123AB | conf:0.97 | OPEN | reservation: A4\n11:47:38 | ANPR_EXIT  | BG123AB | conf:0.96 | PAID | session: 2h33m | 360 RSD',
-  sim: null
-},
-
-barrier: {
-  icon:'🚧', layer:'Fizički sloj', title:'Rampa — kontrola pristupa',
-  desc:'Elektromotor rotira ruku za ~80° za ~1 sekundu. Fotoćelija stalno prati IR zrak ispod ruke — ako je prekinut, motor se momentalno zaustavlja. Fail-open: bez struje, rampa ostaje otvorena (bezbednosni standard).',
-  specs:[
-    {l:'Vreme otv.',v:'~1 sekunda'},
-    {l:'Fail mode',v:'OPEN (bez struje)'},
-    {l:'Fotoćelija',v:'IR · anti-crush'},
-    {l:'Protokol',v:'GPIO → relay'},
-    {l:'Tajmer',v:'auto-close 8s'},
-    {l:'Override',v:'ručni ključ'},
-  ],
-  bullets:[
-    'Svako otvaranje/zatvaranje se loguje sa razlogom i tablicom',
-    'Česta manuelna otvaranja u kratkim intervalima → forenzički signal',
-    'Fotoćelija prekinuta bez prolaza → sumnjiv događaj, alarm',
-    'Watchdog na motoru: ako se ne vrati signal OK → alarm servisu',
-  ],
-  forensic:'09:14:02 | BARRIER_ENTRY | OPEN  | plate:BG123AB | auth:reservation\n09:14:07 | BARRIER_ENTRY | CLOSE | auto | beam:clear\n09:14:09 | BARRIER_ENTRY | MANUAL_OPEN | admin:user_01 | reason:guest',
-  sim: 'barrier-sim'
-},
-
-display: {
-  icon:'🔢', layer:'Fizički sloj', title:'LED displej — slobodna mesta',
-  desc:'Prikazuje broj slobodnih mesta, sekcije, poruke vozačima. Svaka promena beleži se u log — iz tih zapisa se može rekonstruisati zauzetost parkinga u bilo kom trenutku dana.',
-  specs:[
-    {l:'Ažuriranje',v:'real-time'},
-    {l:'Boje',v:'zelena/žuta/crvena'},
-    {l:'Sekcije',v:'A, B, C odvojeno'},
-    {l:'Protokol',v:'serial · I2C'},
-    {l:'Greška',v:'prikazuje ??'},
-    {l:'UPS',v:'nastavlja rad'},
-  ],
-  bullets:[
-    'Zeleno = slobodno, žuto = < 10%, crveno = puno (rampa se ne otvara)',
-    'Senzor offline → prikazuje ?? umesto lažnog broja',
-    'Poruke vlasnika: radno vreme, cene, upozorenja',
-    'Forenzički: log zauzetosti = pasivni zapis o svim prometima',
-  ],
-  forensic:'08:00:01 | display | free=47 | occ=53 | msg=welcome\n10:45:22 | display | free=3  | occ=97 | warn=low_capacity\n11:00:00 | display | free=0  | state=FULL | barrier=CLOSED',
-  sim: 'display-sim'
-},
-
-ups: {
-  icon:'🔋', layer:'Fizički sloj', title:'UPS — sistem neprekidnog napajanja',
-  desc:'Baterija se stalno puni dok ima struje. Switchover na bateriju traje < 10ms — potrošači ne osete prekid. Kada baterija padne ispod 20%, sistem šalje alarm i pokreće upravljano gašenje. Rampa ostaje otvorena mehanički.',
-  specs:[
-    {l:'Autonomija',v:'~25 minuta'},
-    {l:'Switchover',v:'< 10 ms'},
-    {l:'Alarm',v:'na 20% kapaciteta'},
-    {l:'Fail mode',v:'rampa ostaje OPEN'},
-    {l:'Monitoring',v:'USB · serial'},
-    {l:'Napon',v:'12V / 24V out'},
-  ],
-  bullets:[
-    'Nestanak struje u pravo vreme = klasičan napadački vektor',
-    'Log: tačan timestamp nestanka i povratka struje',
-    'Ako se poklopi sa sumnjivim aktivnostima → forenzički signal',
-    'Planned downtime (noćni režim): kamere ostaju online i snimaju, AI analiza i naplata zamrznute do jutra',
-    'Jutarnji recovery scan klasifikuje vozila u 3 kategorije: ostala (A), otišla (B), nova (C)',
-  ],
-  forensic:'23:00:00 | UPS | ac_input=LOST | battery=100% | runtime=25min\n23:18:42 | UPS | battery=20%  | ALERT sent | shutdown_prepare\n23:22:11 | UPS | battery=0%  | system_off | barrier=FAIL-OPEN',
-  sim: null
-},
-
-rpi: {
-  icon:'🤖', layer:'Edge sloj', title:'Raspberry Pi — ivični kontroler',
-  desc:'Minijaturni računar (~$60) koji upravlja celim fizičkim slojem. Prima sve senzorske signale, kontroliše rampe i displej, vrti MQTT broker i lokalnu bazu. Svaki zadatak je poseban systemd servis koji se auto-restartuje.',
-  specs:[
-    {l:'Model',v:'RPi 4B · 4GB RAM'},
-    {l:'CPU',v:'1.8 GHz · ARM'},
-    {l:'Storage',v:'32GB microSD'},
-    {l:'OS',v:'Raspberry Pi OS'},
-    {l:'GPIO',v:'40 pinova'},
-    {l:'Komunikacija',v:'WiFi · Ethernet'},
-  ],
-  bullets:[
-    'Svaki servis: parking-mqtt, parking-sensors, parking-vision...',
-    'Watchdog tajmer prati svaki servis — crash → restart za ~30s',
-    'Offline mode: drži sve lokalno, sinhronizuje kada internet dođe',
-    'Outbox pattern: nijedan podatak se ne gubi pri padu veze',
-  ],
-  forensic:'systemd[1]: parking-vision.service: watchdog timeout\nsystemd[1]: parking-vision.service: Stopped (auto-restart)\nsystemd[1]: parking-vision.service: Started (attempt 2/5)',
-  sim: null
-},
-
-mqtt: {
-  icon:'📨', layer:'Edge sloj', title:'MQTT broker — IoT komunikacijski protokol',
-  desc:'Pub/Sub arhitektura: senzori objavljuju poruke na topice, server se pretplaćuje. Header od samo 2 bajta — savršen za IoT uređaje. QoS 2 za kritične poruke (komande rampe), QoS 0 za česta senzorska očitavanja.',
-  specs:[
-    {l:'Implementacija',v:'Mosquitto'},
-    {l:'QoS rampa',v:'Level 2 (exactly once)'},
-    {l:'QoS senzori',v:'Level 0 (fire & forget)'},
-    {l:'Header',v:'min 2 bajta'},
-    {l:'Port',v:'1883 / 8883 TLS'},
-    {l:'Retain',v:'zadnji status uvek dostupan'},
-  ],
-  bullets:[
-    'parking/spot/A3/status → "OCC|97cm|5.6ms"',
-    'parking/barrier/entry/cmd → "OPEN|BG123AB"',
-    'parking/zone/B/camera → "OFFLINE|VANDALISM"',
-    'parking/ups/status → "BATTERY|87%|22min"',
-  ],
-  forensic:'PUBLISH parking/spot/A3/status "OCC|97cm|5.6ms" QoS:0\nPUBLISH parking/barrier/entry/cmd "OPEN|BG123AB" QoS:2\nPUBLISH parking/zone/B/camera "OFFLINE" QoS:1 RETAIN',
-  sim: null
-},
-
-localdb: {
-  icon:'🗄️', layer:'Edge sloj', title:'Lokalna baza podataka — SQLite offline buffer',
-  desc:'Jedna datoteka na disku — nema servera, nema konfiguracije. WAL mode štiti od corrupcije pri nestanku struje. Sve što senzori generišu čuva se lokalno sa synced=false flagom i šalje u cloud čim veza bude dostupna.',
-  specs:[
-    {l:'Engine',v:'SQLite · WAL mode'},
-    {l:'Veličina',v:'< 500 MB tipično'},
-    {l:'Sync pattern',v:'Outbox (synced flag)'},
-    {l:'Backup',v:'cp parking.db backup.db'},
-    {l:'Tabele',v:'sessions, sensor_logs, queue'},
-    {l:'Enkripcija',v:'SQLCipher opciono'},
-  ],
-  bullets:[
-    'synced=false: čeka na internet; synced=true: potvrđeno u cloudu',
-    'Nikad se ne briše — append-only log za forenziku',
-    'Outage recovery: sve sesije sa perioda gubitka veze su tu',
-    'Sinhronizacija: batch POST /api/sync/batch sa svim pending zapisima',
-  ],
-  forensic:'SELECT * FROM sensor_logs WHERE synced=0 ORDER BY ts;\n-- vraća sve zapise koji čekaju na cloud sync\n\nSELECT * FROM sessions WHERE entry_method="outage_recovery";',
-  sim: null
-},
-
-watchdog: {
-  icon:'⏱️', layer:'Edge sloj', title:'Watchdog timer — auto-restart mehanizam',
-  desc:'Hardverski brojač koji odbrojava unazad od 8 sekundi. Program mora da pošalje "kick" signal pre isteka. Ako ne pošalje (zamrzao se, crashovao, ušao u beskonačnu petlju) — hardver automatski restartuje sistem.',
-  specs:[
-    {l:'Timeout',v:'8 sekundi'},
-    {l:'Kick interval',v:'svakih 2 sekunde'},
-    {l:'Tip',v:'hardverski (/dev/watchdog)'},
-    {l:'Restart',v:'< 60 sekundi ukupno'},
-    {l:'Linux',v:'systemd Restart=always'},
-    {l:'Log',v:'svaki restart evidentiran'},
-  ],
-  bullets:[
-    'Bez watchdoga: sistem "upaljen" ali ne radi ništa korisno satima',
-    'Sa watchdogom: crash → restart za < 1 minut bez intervencije',
-    'Forenzički: čest restart = signal da nešto nije u redu sa softverom',
-    'Parking servis može da crashuje zbog lošeg AI odgovora ili OOM',
-  ],
-  forensic: null,
-  sim: 'watchdog-sim'
-},
-
-api: {
-  icon:'⚡', layer:'Cloud sloj', title:'REST API — cloud backend',
-  desc:'HTTP/HTTPS interfejs između svih klijenata i cloud servera. Svaki zahtev je nezavisan (stateless). Webhook verifikacija sprečava lažne platne potvrde — rampa se nikad ne otvara bez kriptografski verifikovanog signala od payment procesora.',
-  specs:[
-    {l:'Format',v:'JSON · HTTPS'},
-    {l:'Auth',v:'JWT tokens'},
-    {l:'Rate limit',v:'100 req/min per IP'},
-    {l:'Webhook',v:'HMAC-SHA256 verify'},
-    {l:'Status',v:'200/401/403/409/500'},
-    {l:'Idempotency',v:'key po transakciji'},
-  ],
-  bullets:[
-    'GET /api/spots — mapa slobodnih mesta (real-time)',
-    'POST /api/anpr/recognize — OCR tablice, odluka za rampu',
-    'POST /api/payments/webhook — potvrda plaćanja (HMAC verify)',
-    'POST /api/outage/recover — post-outage reconciliation scan',
-  ],
-  forensic:'POST /api/barrier/command 401 Unauthorized\n  ip: 185.220.101.x timestamp: 2025-04-12T03:14:22Z\n  -- neovlašćen pokušaj otvaranja rampe, IP logovan',
-  sim: null
-},
-
-postgres: {
-  icon:'🐘', layer:'Cloud sloj', title:'PostgreSQL — centralna cloud baza',
-  desc:'Najmoćniji open-source relacioni sistem. ACID transakcije garantuju da naplata nije nikad "napola" upisana. pg_audit ekstenzija loguje svaku promenu u bazi — ako admin izbriše sesiju, ostaje trag ko je to uradio i kada.',
-  specs:[
-    {l:'ACID',v:'✓ pune transakcije'},
-    {l:'Audit',v:'pg_audit — svaka izmena'},
-    {l:'JSONB',v:'AI eventi nativno'},
-    {l:'Timestamp',v:'microsekunda preciznost'},
-    {l:'Partitioning',v:'sensor_logs po mesecu'},
-    {l:'Backup',v:'WAL continuous archiving'},
-  ],
-  bullets:[
-    'sessions: svaka parkirna sesija od ulaska do izlaska',
-    'vehicle_snapshots: AI detektovana vozila iz svake kamere',
-    'outage_log: svaki nestanak struje sa tipom i trajanjem',
-    'payments: svaka transakcija sa webhook potvrdom',
-  ],
-  forensic:"-- Ko je brisao sesije?\nSELECT * FROM pg_audit_log\nWHERE table_name='sessions' AND action='DELETE'\nORDER BY timestamp DESC;",
-  sim: null
-},
-
-ai: {
-  icon:'🧠', layer:'Cloud sloj', title:'AI servis — Vision OCR i analiza zona',
-  desc:'Claude Vision API čita tablice iz slike i klasifikuje vozila na nadzornim snimcima. Confidence ispod 85% → manual review, ne alarm. Za produkciju: OpenALPR za brzinu tablice, Claude za kompleksnu analizu zona.',
-  specs:[
-    {l:'Model',v:'Claude Vision'},
-    {l:'Zadatak 1',v:'OCR tablice iz slike'},
-    {l:'Zadatak 2',v:'klasifikacija tipa vozila'},
-    {l:'Confidence',v:'prag 85%'},
-    {l:'Latencija',v:'300–800 ms'},
-    {l:'Input',v:'base64 JPEG/PNG'},
-  ],
-  bullets:[
-    'Klasifikuje: auto, motor, bicikl, trotinet, kamion, prazno',
-    'Diferencijalna analiza: T1 vs T2 — isti piksel = isto vozilo',
-    'Nema analize pokreta, svetala, putnika — samo pozicija',
-    'Rezultat se cross-reference-uje sa ANPR logom i senzorom',
-  ],
-  forensic:'POST /v1/messages → {"plate":"BG123AB","confidence":0.97}\n-- confidence < 0.85:\nINSERT INTO manual_review (plate, snapshot, reason)\nVALUES (null, "img_2025...", "low_confidence:0.71")',
-  sim: null
-},
-
-payment: {
-  icon:'💳', layer:'Cloud sloj', title:'Payment API — automatska naplata',
-  desc:'Registrovani korisnik nema fizičku interakciju — ANPR ga prepozna pri izlasku, sistem automatski naplaćuje kartici i šalje digitalni račun. Gost plaća na automatu pre izlaska. Dug iz perioda kvara sistema akumulira se i naplaćuje pri sledećoj poseti.',
-  specs:[
-    {l:'Registrovani',v:'auto-charge pri izlasku'},
-    {l:'Gost',v:'automat pre izlaza'},
-    {l:'Dug',v:'akumulira se, sledeća poseta'},
-    {l:'Enkripcija',v:'TLS 1.3 end-to-end'},
-    {l:'Tokenizacija',v:'PCI DSS · nikad broj kartice'},
-    {l:'Fiskalizacija',v:'ESIR · IIC + PFR broj'},
-  ],
-  bullets:[
-    'Webhook: rampa se otvara tek nakon HMAC potvrde od procesora',
-    'Idempotency key: dupla naplata je nemoguća čak i pri retry-u',
-    'Overstay: dug bez grace perioda — 30-minutni snapshot je dovoljan',
-    'Digitalni račun: validan PDV dokument, bez papira',
-  ],
-  forensic:'PAYMENT | BG123AB | 360 RSD | Visa*4521 | SUCCESS\n  txn: TXN-20250412-08847 | webhook: verified\nPAYMENT | NS456CD | 210 RSD | DEBT_PENDING\n  reason: outage_period | next_visit_collection',
-  sim: null
-},
-
-crossref: {
-  icon:'🔗', layer:'Cloud sloj', title:'Cross-reference engine — trostruka verifikacija',
-  desc:'Centralna forenzička logika. Svake 30 minuta poredi tri nezavisna izvora: nadzorna kamera (T1 vs T2), ANPR ulazni log, senzorski status. Tek njihova kombinacija daje pouzdanu odluku. Nijedan izvor sam nije dovoljan.',
-  specs:[
-    {l:'Interval',v:'30 minuta'},
-    {l:'Izvor 1',v:'Kamera: T1 vs T2'},
-    {l:'Izvor 2',v:'ANPR: ulazni log'},
-    {l:'Izvor 3',v:'Senzor: status'},
-    {l:'Confidence',v:'prag 85% za alarm'},
-    {l:'Ispod praga',v:'manual review queue'},
-  ],
-  bullets:[
-    'Scenario A: kamera vidi auto, ANPR ima ulaz, senzor OCC → OK',
-    'Scenario B: kamera T1=T2 isti auto, PAID, nema ANPR izlaza → OVERSTAY',
-    'Scenario C: kamera vidi auto, ANPR nema ulaz → duh vozilo (tailgating?)',
-    'Scenario D: kamera vidi NS tablicu na rezervisanom A4 mestu → alarm',
-  ],
-  forensic:'CROSS_REF | spot=A4 | cam:NS456CD | anpr_in:BG123AB | sensor:OCC\n  ALERT: wrong_plate_on_reserved_spot\n  evidence: snapshot_T2_A4.jpg + anpr_entry_log_09:14',
-  sim: null
-},
-
-mobileapp: {
-  icon:'📱', layer:'Korisnički sloj', title:'Mobilna aplikacija — nulta interakcija',
-  desc:'Korisnik registruje tablicu i karticu jednom. Sistem ga prepozna ANPR-om, automatski naplati pri izlasku, pošalje digitalni račun. Tokom parkiranja — live timer i procena troška. Bez tiketa, bez automata, bez čekanja.',
-  specs:[
-    {l:'Registracija',v:'email + tablica + kartica'},
-    {l:'Više tablica',v:'porodica, firma'},
-    {l:'Timer',v:'live, real-time'},
-    {l:'Naplata',v:'automatska pri izlasku'},
-    {l:'Notifikacije',v:'FCM push'},
-    {l:'Računi',v:'istorija + PDF'},
-  ],
-  bullets:[
-    'Push: "Sesija pokrenuta · A-4 · 09:14" — bez da dotakne telefon',
-    'Push: "⚠ Vaše rezervisano mesto A4 zauzeto — NS456CD"',
-    'Push: "Dug od 210 RSD biće naplaćen pri izlasku"',
-    'Istorija: sve posete, svi računi, filtrabilno po datumu i tablici',
-  ],
-  forensic:'09:14:02 | FCM_PUSH | user:marko@email.com | session_started | spot:A4\n11:47:38 | FCM_PUSH | user:marko@email.com | auto_charge:360 RSD | receipt:r_08847',
-  sim: null
-},
-
-admin: {
-  icon:'🖥️', layer:'Korisnički sloj', title:'Admin panel — web dashboard',
-  desc:'Real-time mapa parkinga putem WebSocket veze — svaka promena senzora momentalno ažurira prikaz. Admin vidi sve aktivne sesije, alarme, stanje kamera i forenzičke logove. Ručne korekcije se loguju sa admin nalogom.',
-  specs:[
-    {l:'Real-time',v:'WebSocket push'},
-    {l:'Mapa',v:'po mestima i zonama'},
-    {l:'Alarmi',v:'AI detektovane nepravilnosti'},
-    {l:'Korekcija',v:'manual override + log'},
-    {l:'Kamera status',v:'online/offline/degraded'},
-    {l:'Izvještaji',v:'prihod, popunjenost, incidenti'},
-  ],
-  bullets:[
-    'Manual review queue: AI < 85% confidence → čeka admin potvrdu',
-    'Camera fault map: koje zone su bez vizuelne verifikacije',
-    'Outage report: šta se desilo, ko je bio tu, finansijski uticaj',
-    'Svaka admin akcija loguje se sa timestampom i razlogom',
-  ],
-  forensic:'ADMIN_ACTION | user:admin_01 | MANUAL_OPEN | barrier:ENTRY_1\n  reason: "guest request" | timestamp: 2025-04-12T10:32:11Z\nADMIN_ACTION | user:admin_01 | SESSION_DELETE | session:s_042\n  -- pg_audit: ova akcija je zabeležena, ne može se sakriti',
-  sim: null
-},
-
-guest: {
-  icon:'🎫', layer:'Korisnički sloj', title:'Gost korisnik — bez aplikacije',
-  desc:'ANPR beleži tablicu pri ulasku kao "gost sesija". Gost plaća na automatu pre izlaska — unosi tablicu, sistem prikazuje trajanje i iznos. Ako ode tokom kvara sistema, dug se pamti uz tablicu i dodaje na račun pri sledećoj poseti.',
-  specs:[
-    {l:'Identifikacija',v:'samo tablica'},
-    {l:'Plaćanje',v:'automat pre izlaska'},
-    {l:'Grace period',v:'nema (30min snapshot)'},
-    {l:'Dug',v:'pamti se uz tablicu'},
-    {l:'Blokada',v:'posle 3x neplaćenog duga'},
-    {l:'Račun',v:'papirni ili email opcionalno'},
-  ],
-  bullets:[
-    'Automat: unos tablice → sistem prikazuje vreme i iznos → naplata',
-    'Dug se dodaje na sledeću posetu automatski',
-    'Obaveštenje pri ulasku: "Evidentirani dug 210 RSD biće naplaćen"',
-    'Posle 3 neplaćena duga: tablica na listi za pojačan nadzor',
-  ],
-  forensic:'GUEST_SESSION | plate:NS456CD | entry:09:22 | type:WALK_IN\nGUEST_PAYMENT | plate:NS456CD | 270 RSD | terminal_03 | PAID\nGUEST_DEBT    | plate:KG789EF | 150 RSD | PENDING → next_visit',
-  sim: null
-},
-
-forensic: {
-  icon:'🔎', layer:'Korisnički sloj', title:'Forenzički log — rekonstrukcija incidenata',
-  desc:'Svaka komponenta sistema loguje svaku akciju sa timestampom. Iz kombinacije ovih logova može se rekonstruisati tačno šta se desilo, u kom redosledu i zašto — čak i retroaktivno, za incidente koji se nisu odmah primetili.',
-  specs:[
-    {l:'Čuvanje',v:'minimalno 90 dana'},
-    {l:'Nepromenjivost',v:'append-only log'},
-    {l:'pg_audit',v:'svaka DB izmena'},
-    {l:'Slika',v:'uz svaki ANPR zapis'},
-    {l:'Timezone',v:'UTC uvek'},
-    {l:'Izvoz',v:'CSV · JSON · PDF izveštaj'},
-  ],
-  bullets:[
-    'Tailgating: jedan ANPR ulaz, dva auta na nadzornoj kameri',
-    'Sabotaža senzora: senzor OK, kamera vidi auto → fizički napad',
-    'Nelojalni admin: pg_audit beleži brisanje sesije bez razloga',
-    'Napadački outage: nestanak struje se poklapa sa sumnjivim izlaskom',
-  ],
-  forensic:'-- Rekonstrukcija incidenta 2025-04-12 23:00\n23:00:00 power_outage detected\n23:00:02 barrier FAIL-OPEN (expected)\n23:00:45 ANPR_EXIT: KG789EF (nije evidentiran ulaz!)\n23:01:00 camera_offline (namerna sabotaža?)\n  → forenzički zaključak: vozilo ušlo pre outage-a ili tailgating',
-  sim: null
-}
-
+// Globalni status sistema — utiče na sve tabove
+const SYS = {
+  power: true,      // ima struju
+  planned: false,   // planirano gašenje
+  upsLevel: 100,
+  offlineCams: [],  // kamere koje su offline
 };
 
-/* ── SIMULATION HTML GENERATORS ─────────────────────── */
-function sensorSim() {
-  return `<div class="sim-wrap">
-  <div class="sim-title-bar"><div class="sim-dot" style="background:var(--accent2)"></div>Simulacija senzora</div>
-  <div class="sim-content">
-    <div style="display:flex;gap:8px;margin-bottom:10px">
-      <button class="sbtn on-g" id="ss-free" onclick="setSensor(false)">Prazno mesto</button>
-      <button class="sbtn" id="ss-occ"  onclick="setSensor(true)">Dosao auto</button>
-    </div>
-    <div class="status-row">
-      <div class="status-dot" id="ss-dot" style="background:var(--accent2)"></div>
-      <span class="status-label" id="ss-status" style="color:var(--accent2)">SLOBODNO</span>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0">
-      <div class="spec-item"><div class="spec-label">Distanca</div><div class="spec-val" id="ss-dist">~500 cm</div></div>
-      <div class="spec-item"><div class="spec-label">Vreme odziva</div><div class="spec-val" id="ss-time">~29 ms</div></div>
-    </div>
-    <div class="log-line log-ok" id="ss-log">FREE → MQTT publish → cloud sync</div>
-  </div></div>`;
-}
-
-function setSensor(occ) {
-  const dot = document.getElementById('ss-dot');
-  const st  = document.getElementById('ss-status');
-  const fb  = document.getElementById('ss-free');
-  const ob  = document.getElementById('ss-occ');
-  const log = document.getElementById('ss-log');
-  if (occ) {
-    dot.style.background = 'var(--danger)'; st.style.color = 'var(--danger)'; st.textContent = 'ZAUZETO';
-    document.getElementById('ss-dist').textContent = '~97 cm';
-    document.getElementById('ss-time').textContent = '~5.6 ms';
-    log.className = 'log-line log-err'; log.textContent = 'OCC → MQTT publish → session created';
-    fb.className = 'sbtn'; ob.className = 'sbtn on-r';
-  } else {
-    dot.style.background = 'var(--accent2)'; st.style.color = 'var(--accent2)'; st.textContent = 'SLOBODNO';
-    document.getElementById('ss-dist').textContent = '~500 cm';
-    document.getElementById('ss-time').textContent = '~29 ms';
-    log.className = 'log-line log-ok'; log.textContent = 'FREE → MQTT publish → cloud sync';
-    fb.className = 'sbtn on-g'; ob.className = 'sbtn';
-  }
-}
-
-function cameraSim() {
-  return `<div class="sim-wrap">
-  <div class="sim-title-bar"><div class="sim-dot" style="background:var(--accent2)"></div>Diferencijalna analiza T1 vs T2</div>
-  <div class="sim-content">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-      <div class="spec-item" style="border-color:rgba(52,212,160,.3)">
-        <div class="spec-label">Snapshot T1 · 09:30</div>
-        <div style="font-size:11px;color:var(--subtext);margin-top:4px">🚗 B-3 · NS456CD<br>🚗 B-4 · BG111AA<br>⬜ B-5 · prazno</div>
-      </div>
-      <div class="spec-item" style="border-color:rgba(232,84,84,.3)">
-        <div class="spec-label">Snapshot T2 · 10:00</div>
-        <div style="font-size:11px;color:var(--subtext);margin-top:4px">🚗 B-3 · NS456CD <span style="color:var(--danger)">⚠</span><br>⬜ B-4 · prazno<br>⬜ B-5 · prazno</div>
-      </div>
-    </div>
-    <div class="spec-item" style="border-color:rgba(232,84,84,.4);margin-bottom:8px">
-      <div class="spec-label" style="color:var(--danger)">AI zaključak</div>
-      <div style="font-size:11px;color:var(--subtext);margin-top:3px">NS456CD → isti auto, isto mesto, PAID status, nema ANPR izlaza</div>
-      <div style="font-size:12px;font-weight:700;color:var(--danger);margin-top:4px">→ OVERSTAY detektovan</div>
-    </div>
-    <div class="log-line log-err">OVERSTAY | spot=B3 | plate=NS456CD | debt_created</div>
-  </div></div>`;
-}
-
-function barrierSim() {
-  let isOpen = false;
-  setTimeout(() => {
-    document.getElementById('barrier-open-btn').onclick = () => {
-      isOpen = !isOpen;
-      const arm = document.getElementById('barrier-arm');
-      const lbl = document.getElementById('barrier-lbl');
-      const btn = document.getElementById('barrier-open-btn');
-      arm.style.transform = isOpen ? 'rotate(-75deg)' : 'rotate(0deg)';
-      arm.style.transformOrigin = 'left center';
-      arm.style.transition = 'transform .9s ease-in-out';
-      lbl.textContent = isOpen ? 'OTVORENA' : 'ZATVORENA';
-      lbl.style.color = isOpen ? 'var(--accent2)' : 'var(--danger)';
-      btn.className = isOpen ? 'sbtn on-g' : 'sbtn on-r';
-      btn.textContent = isOpen ? 'Zatvori rampu' : 'Otvori rampu';
-    };
-  }, 50);
-  return `<div class="sim-wrap">
-  <div class="sim-title-bar"><div class="sim-dot" style="background:var(--warn)"></div>Simulacija rampe</div>
-  <div class="sim-content">
-    <svg width="100%" viewBox="0 0 260 90" style="margin-bottom:10px">
-      <rect x="20" y="20" width="14" height="65" rx="3" fill="none" stroke="var(--border)" stroke-width="1.5"/>
-      <circle cx="27" cy="34" r="9" fill="none" stroke="var(--warn)" stroke-width="1.5"/>
-      <text x="22" y="38" style="font-size:8px;fill:var(--warn);font-weight:bold">M</text>
-      <g id="barrier-arm" style="transform-origin:34px 34px">
-        <rect x="34" y="30" width="130" height="8" rx="3" fill="var(--warn)" opacity=".9"/>
-        <line x1="54" y1="30" x2="54" y2="38" stroke="var(--danger)" stroke-width="1.5"/>
-        <line x1="74" y1="30" x2="74" y2="38" stroke="var(--danger)" stroke-width="1.5"/>
-        <line x1="94" y1="30" x2="94" y2="38" stroke="var(--danger)" stroke-width="1.5"/>
-        <line x1="114" y1="30" x2="114" y2="38" stroke="var(--danger)" stroke-width="1.5"/>
-        <circle cx="165" cy="34" r="5" fill="var(--danger)"/>
-      </g>
-      <line x1="20" y1="85" x2="240" y2="85" stroke="var(--border)" stroke-width="1.5"/>
-      <circle cx="60" cy="75" r="6" fill="none" stroke="var(--accent2)" stroke-width="1.2"/>
-      <line x1="66" y1="75" x2="130" y2="75" stroke="var(--accent2)" stroke-width="1" stroke-dasharray="4,2"/>
-      <circle cx="136" cy="75" r="6" fill="none" stroke="var(--accent2)" stroke-width="1.2"/>
-      <text x="85" y="70" style="font-size:8px;fill:var(--accent2)">IR zrak</text>
-    </svg>
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-      <button class="sbtn on-r" id="barrier-open-btn">Otvori rampu</button>
-      <span class="status-label" id="barrier-lbl" style="color:var(--danger);font-size:12px">ZATVORENA</span>
-    </div>
-    <div class="log-line log-info" style="font-size:10px">fail-open pri nestanku struje · auto-close 10s bez prolaza</div>
-  </div></div>`;
-}
-
-function displaySim() {
-  return `<div class="sim-wrap">
-  <div class="sim-title-bar"><div class="sim-dot" style="background:var(--warn)"></div>LED displej simulacija</div>
-  <div class="sim-content">
-    <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
-      <button class="sbtn on-g" onclick="setDisp('free')">Slobodna mesta</button>
-      <button class="sbtn" onclick="setDisp('low')">Skoro puno</button>
-      <button class="sbtn" onclick="setDisp('full')">Puno</button>
-      <button class="sbtn" onclick="setDisp('err')">Greška senzora</button>
-    </div>
-    <div style="background:#111;border-radius:8px;padding:12px;font-family:var(--mono);text-align:center;margin-bottom:8px">
-      <div id="disp-num" style="font-size:36px;font-weight:700;color:#22cc44;letter-spacing:3px">47</div>
-      <div id="disp-lbl" style="font-size:10px;color:#15a030;letter-spacing:2px;margin-bottom:8px">SLOBODNA MESTA</div>
-      <div style="display:flex;justify-content:center;gap:16px;font-size:11px">
-        <span>A: <span id="disp-a" style="color:#22cc44">18</span></span>
-        <span>B: <span id="disp-b" style="color:#22cc44">21</span></span>
-        <span>C: <span id="disp-c" style="color:#22cc44">8</span></span>
-      </div>
-    </div>
-    <div class="log-line" id="disp-log" style="color:var(--accent2)">display_update | free=47 | occ=53</div>
-  </div></div>`;
-}
-
-function setDisp(s) {
-  const d = {
-    free: {num:'47',lbl:'SLOBODNA MESTA',nc:'#22cc44',a:'18',b:'21',c:'8',ac:'#22cc44',bc:'#22cc44',cc:'#22cc44',log:'display_update | free=47 | occ=53',lc:'var(--accent2)'},
-    low:  {num:'4', lbl:'MALO MESTA',    nc:'#EF9F27',a:'0', b:'0', c:'4', ac:'#555',  bc:'#555',  cc:'#EF9F27',log:'display_update | free=4 | warn=low | use_C',lc:'var(--warn)'},
-    full: {num:'0', lbl:'PARKING JE PUN',nc:'var(--danger)',a:'0',b:'0',c:'0',ac:'#555',bc:'#555',cc:'#555',log:'display_update | free=0 | state=FULL | barrier=CLOSED',lc:'var(--danger)'},
-    err:  {num:'??',lbl:'GREŠKA SENZORA',nc:'var(--danger)',a:'??',b:'12',c:'??',ac:'var(--danger)',bc:'#22cc44',cc:'var(--danger)',log:'ALERT | sensor_fault | zone=A,C | manual_check',lc:'var(--danger)'},
-  }[s];
-  document.getElementById('disp-num').style.color = d.nc;
-  document.getElementById('disp-num').textContent = d.num;
-  document.getElementById('disp-lbl').textContent = d.lbl;
-  document.getElementById('disp-lbl').style.color = d.nc;
-  document.getElementById('disp-a').textContent = d.a; document.getElementById('disp-a').style.color = d.ac;
-  document.getElementById('disp-b').textContent = d.b; document.getElementById('disp-b').style.color = d.bc;
-  document.getElementById('disp-c').textContent = d.c; document.getElementById('disp-c').style.color = d.cc;
-  document.getElementById('disp-log').textContent = d.log; document.getElementById('disp-log').style.color = d.lc;
-}
-
-function watchdogSim() {
-  let running = false, crashed = false, wdtVal = 8.0, tickIv, kickIv;
-  setTimeout(() => {
-    document.getElementById('wdt-start').onclick = () => {
-      if (running) return;
-      running = true; crashed = false; wdtVal = 8.0;
-      document.getElementById('wdt-start').disabled = true;
-      document.getElementById('wdt-crash').disabled = false;
-      document.getElementById('wdt-log').innerHTML = '';
-      wdtLog('Sistem pokrenut · watchdog aktivan', 'log-ok');
-      tickIv = setInterval(() => {
-        if (!running) return;
-        wdtVal = Math.max(0, wdtVal - .1);
-        const pct = wdtVal / 8 * 100;
-        document.getElementById('wdt-bar').style.width = pct + '%';
-        document.getElementById('wdt-bar').style.background = pct > 50 ? 'var(--accent2)' : pct > 20 ? 'var(--warn)' : 'var(--danger)';
-        document.getElementById('wdt-val').textContent = wdtVal.toFixed(1) + 's';
-        if (wdtVal <= 0 && running) triggerReset();
-      }, 100);
-      kickIv = setInterval(() => {
-        if (!running || crashed) return;
-        wdtVal = 8.0;
-        wdtLog('kick → timer resetovan na 8.0s', 'log-ok');
-      }, 2000);
-    };
-    document.getElementById('wdt-crash').onclick = () => {
-      crashed = true;
-      clearInterval(kickIv);
-      document.getElementById('wdt-crash').disabled = true;
-      wdtLog('CRASH · servis zamrznut · nema kick-a', 'log-err');
-    };
-  }, 80);
-
-  function wdtLog(msg, cls) {
-    const el = document.getElementById('wdt-log');
-    const now = new Date().toTimeString().slice(0,8);
-    el.innerHTML += `<div class="log-line ${cls}">[${now}] ${msg}</div>`;
-    el.scrollTop = el.scrollHeight;
-  }
-  function triggerReset() {
-    running = false; clearInterval(tickIv); clearInterval(kickIv);
-    wdtLog('WDT ISTEKAO → hardverski reset!', 'log-err');
-    setTimeout(() => wdtLog('Sistem se restartuje...', 'log-warn'), 600);
-    setTimeout(() => { wdtLog('Svi servisi podignuti → OK', 'log-ok'); document.getElementById('wdt-start').disabled = false; document.getElementById('wdt-crash').disabled = true; }, 2800);
-  }
-
-  return `<div class="sim-wrap">
-  <div class="sim-title-bar"><div class="sim-dot" style="background:var(--accent2)"></div>Watchdog simulacija</div>
-  <div class="sim-content">
-    <div style="display:flex;gap:8px;margin-bottom:10px">
-      <button class="sbtn on-g" id="wdt-start">Pokreni sistem</button>
-      <button class="sbtn on-r" id="wdt-crash" disabled>Simuliraj crash</button>
-    </div>
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-      <span style="font-size:11px;color:var(--muted);min-width:70px">WDT brojač:</span>
-      <div style="flex:1;height:12px;background:var(--border);border-radius:6px;overflow:hidden">
-        <div id="wdt-bar" style="height:100%;width:100%;background:var(--accent2);transition:background .3s"></div>
-      </div>
-      <span id="wdt-val" style="font-size:11px;color:var(--muted);min-width:32px;text-align:right">8.0s</span>
-    </div>
-    <div id="wdt-log" style="max-height:100px;overflow-y:auto;background:var(--bg);border-radius:6px;padding:6px;font-size:10px"></div>
-  </div></div>`;
-}
-
-/* ── PANEL LOGIC ─────────────────────────────────────── */
-let currentNode = null;
-
-function showNode(id, clickedEl) {
-  const n = nodes[id];
-  if (!n) return;
-
-  // deactivate all, activate this
-  document.querySelectorAll('.node').forEach(el => el.classList.remove('active'));
-  if (clickedEl) clickedEl.classList.add('active');
-
-  currentNode = id;
-  document.getElementById('panel-icon').textContent    = n.icon;
-  document.getElementById('panel-eyebrow').textContent = n.layer;
-  document.getElementById('panel-title').textContent   = n.title;
-
-  let html = `<p class="panel-desc">${n.desc}</p>`;
-
-  // Specs
-  if (n.specs && n.specs.length) {
-    html += `<div class="panel-section">
-      <div class="panel-section-title">Specifikacije</div>
-      <div class="spec-grid">
-        ${n.specs.map(s=>`<div class="spec-item"><div class="spec-label">${s.l}</div><div class="spec-val">${s.v}</div></div>`).join('')}
-      </div></div>`;
-  }
-
-  // Bullets
-  if (n.bullets && n.bullets.length) {
-    html += `<div class="panel-section">
-      <div class="panel-section-title">Kako funkcioniše</div>
-      <ul class="bullet-list">
-        ${n.bullets.map(b=>`<li>${b}</li>`).join('')}
-      </ul></div>`;
-  }
-
-  // Forensic log
-  if (n.forensic) {
-    html += `<div class="panel-section">
-      <div class="panel-section-title">Forenzički trag</div>
-      <div class="forensic-box">
-        <div class="forensic-label">LOG ZAPIS</div>
-        <code>${n.forensic.replace(/\n/g,'<br>')}</code>
-      </div></div>`;
-  }
-
-  // Simulation
-  if (n.sim) {
-    html += `<div class="panel-section"><div class="panel-section-title">Interaktivna simulacija</div>`;
-    if      (n.sim === 'sensor')      html += sensorSim();
-    else if (n.sim === 'camera-sim')  html += cameraSim();
-    else if (n.sim === 'barrier-sim') html += barrierSim();
-    else if (n.sim === 'display-sim') html += displaySim();
-    else if (n.sim === 'watchdog-sim')html += watchdogSim();
-    html += `</div>`;
-  }
-
-  document.getElementById('panel-body').innerHTML = html;
-  document.getElementById('detail-panel').classList.add('open');
-  document.getElementById('overlay').classList.add('show');
-}
-
-function closePanel() {
-  document.getElementById('detail-panel').classList.remove('open');
-  document.getElementById('overlay').classList.remove('show');
-  document.querySelectorAll('.node').forEach(el => el.classList.remove('active'));
-  currentNode = null;
-}
-
-
-// Node click listeners
-document.querySelectorAll('.node[data-node]').forEach(el => {
-  el.addEventListener('click', function() {
-    showNode(this.dataset.node, this);
-  });
+const DB = {
+  vehicles: {
+    'BG 123 AB': {name:'Marko Petrović', status:'registered', sessions:14, debt:0},
+    'NS 456 CD': {name:'Ana Jovanović',  status:'reserved',   sessions:6,  debt:0, reserved_spot:'B2'},
+    'KG 789 EF': {name:'—',              status:'blacklist',  sessions:0,  debt:0, reason:'Neplaćeni dug 3x'},
+    'NI 321 ZZ': {name:'—',             status:'unknown',    sessions:0,  debt:0},
+  },
+  spots: [
+    {id:'A1',zone:'A',status:'free', plate:null,      cam:'CAM_A'},
+    {id:'A2',zone:'A',status:'occ',  plate:'BG 123 AB',cam:'CAM_A',entry:new Date(now()-3600000)},
+    {id:'A3',zone:'A',status:'free', plate:null,      cam:'CAM_A'},
+    {id:'A4',zone:'A',status:'occ',  plate:'BG 444 MN',cam:'CAM_A',entry:new Date(now()-5400000)},
+    {id:'A5',zone:'A',status:'free', plate:null,      cam:'CAM_A'},
+    {id:'A6',zone:'A',status:'free', plate:null,      cam:'CAM_A'},
+    {id:'B1',zone:'B',status:'free', plate:null,      cam:'CAM_B'},
+    {id:'B2',zone:'B',status:'reserved',plate:'NS 456 CD',cam:'CAM_B',entry:new Date(now()-1800000)},
+    {id:'B3',zone:'B',status:'free', plate:null,      cam:'CAM_B'},
+    {id:'B4',zone:'B',status:'occ',  plate:'KG 111 PP',cam:'CAM_B',entry:new Date(now()-7200000)},
+    {id:'B5',zone:'B',status:'free', plate:null,      cam:'CAM_B'},
+    {id:'B6',zone:'B',status:'free', plate:null,      cam:'CAM_B'},
+    {id:'C1',zone:'C',status:'occ',  plate:'NS 222 QQ',cam:'CAM_C',entry:new Date(now()-900000)},
+    {id:'C2',zone:'C',status:'free', plate:null,      cam:'CAM_C'},
+    {id:'C3',zone:'C',status:'occ',  plate:'BG 333 RR',cam:'CAM_C',entry:new Date(now()-2700000)},
+    {id:'C4',zone:'C',status:'free', plate:null,      cam:'CAM_C'},
+    {id:'C5',zone:'C',status:'free', plate:null,      cam:'CAM_C'},
+    {id:'C6',zone:'C',status:'free', plate:null,      cam:'CAM_C'},
+  ],
+  cameras: [
+    {id:'CAM_A', zone:'Zona A', status:'online',  spots:['A1','A2','A3','A4','A5','A6']},
+    {id:'CAM_B', zone:'Zona B', status:'online',  spots:['B1','B2','B3','B4','B5','B6']},
+    {id:'CAM_C', zone:'Zona C', status:'online',  spots:['C1','C2','C3','C4','C5','C6']},
+    {id:'CAM_ENTRY', zone:'Ulaz/Izlaz', status:'online', spots:[]},
+  ],
+  sessions: [],
+  revenue: 1440,
+};
+DB.spots.filter(s=>s.entry).forEach(s=>{
+  DB.sessions.push({plate:s.plate,spot:s.id,entry:s.entry,status:'active'});
 });
 
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
+/* ════════════════════════════════════════════
+   SYSTEM STATUS — utiče na sve tabove
+════════════════════════════════════════════ */
+function updateSysBadge() {
+  const dot = document.getElementById('sys-dot');
+  const lbl = document.getElementById('sys-label');
+  if (!SYS.power && SYS.upsLevel === 0) {
+    dot.className = 'off';
+    lbl.textContent = 'Sistem ugašen';
+  } else if (!SYS.power) {
+    dot.className = 'warn';
+    lbl.textContent = 'UPS · baterija ' + SYS.upsLevel + '%';
+  } else if (SYS.planned) {
+    dot.className = 'warn';
+    lbl.textContent = 'Noćni mode · kamere snimaju';
+  } else if (SYS.offlineCams.length > 0) {
+    dot.className = 'warn';
+    lbl.textContent = 'Degraded · ' + SYS.offlineCams.length + ' kamera offline';
+  } else {
+    dot.className = 'on';
+    lbl.textContent = 'Sistem aktivan';
+  }
+}
+
+/* ════════════════════════════════════════════
+   LOG
+════════════════════════════════════════════ */
+function addLog(msg, type, targetId) {
+  const id = targetId || 'log-body';
+  const el = document.getElementById(id);
+  if (!el) return;
+  const row = document.createElement('div');
+  row.className = 'log-entry log-'+(type||'');
+  row.innerHTML = `<span class="log-ts">${ts()}</span><span class="log-msg">${msg}</span>`;
+  el.appendChild(row);
+  el.scrollTop = el.scrollHeight;
+}
+// Broadcast log to multiple targets
+function blog(msg, type) {
+  addLog(msg, type, 'log-body');
+  addLog(msg, type, 'outage-log');
+}
+function clearLog(id) { const el=document.getElementById(id); if(el) el.innerHTML=''; }
+
+/* ════════════════════════════════════════════
+   TABS
+════════════════════════════════════════════ */
+function setView(id, btn) {
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('view-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+/* ════════════════════════════════════════════
+   PARKING MAP
+════════════════════════════════════════════ */
+function renderMap() {
+  const container = document.getElementById('parking-map');
+  let html = '';
+  ['A','B','C'].forEach(z => {
+    const spots = DB.spots.filter(s=>s.zone===z);
+    html += `<div class="zone-label">Zona ${z}</div><div class="spot-row">`;
+    spots.forEach(s => {
+      // Ako sistem nema struje — spots su "frozen"
+      const isPowerOff = !SYS.power && SYS.upsLevel === 0;
+      const camOffline = SYS.offlineCams.includes(s.cam);
+      const cls = isPowerOff ? 'offline' :
+                  s.status==='free' ? '' : s.status==='occ' ? 'occ' :
+                  s.status==='reserved' ? 'reserved' : s.status==='overstay' ? 'overstay' : 'session';
+      const dur = s.entry ? Math.round((now()-s.entry)/60000) : 0;
+      html += `<div class="spot ${cls}" onclick="spotClick('${s.id}')">
+        <span class="spot-status"></span>
+        <span class="spot-id">${s.id}</span>
+        ${s.plate ? `<span class="spot-plate">${s.plate.replace(' ','·')}</span>` : ''}
+        ${s.entry  ? `<span class="spot-plate" style="color:var(--muted)">${dur}m</span>` : ''}
+        <span class="cam-badge ${camOffline?'offline':''}">${s.cam.replace('CAM_','')}</span>
+      </div>`;
+    });
+    html += '</div>';
+  });
+  container.innerHTML = html;
+  updateStats();
+}
+
+function updateStats() {
+  const free = DB.spots.filter(s=>s.status==='free').length;
+  const occ  = DB.spots.filter(s=>s.status!=='free').length;
+  document.getElementById('stat-free').textContent = free;
+  document.getElementById('stat-occ').textContent  = occ;
+  document.getElementById('stat-sess').textContent = DB.sessions.filter(s=>s.status==='active').length;
+  document.getElementById('stat-rev').textContent  = DB.revenue.toLocaleString('sr');
+}
+
+function spotClick(id) {
+  if (!SYS.power && SYS.upsLevel===0) return;
+  const spot = DB.spots.find(s=>s.id===id);
+  if (!spot || spot.status==='free') return;
+  const dur = spot.entry ? Math.round((now()-spot.entry)/60000) : 0;
+  const amt = Math.round(dur/60*RATE);
+  if (confirm(`Mesto ${id} · ${spot.plate} · ${dur} min · ${amt} RSD\nZatvori sesiju i naplati?`)) {
+    closeSession(spot.plate, id, amt);
+  }
+}
+
+function closeSession(plate, spotId, amt) {
+  const spot = DB.spots.find(s=>s.id===spotId);
+  if (!spot) return;
+  spot.status='free'; spot.plate=null; spot.entry=null;
+  const sess = DB.sessions.find(s=>s.plate===plate&&s.status==='active');
+  if (sess) { sess.status='paid'; sess.amount=amt; }
+  DB.revenue += amt;
+  addLog(`SESSION_END | ${plate} | ${spotId} | ${amt} RSD | PAID`, 'ok');
+  addLog(`PAYMENT | auto-charge | receipt generated`, 'info');
+  renderMap(); renderSessions();
+  showReceipt(plate, spotId, amt);
+}
+
+function showReceipt(plate, spot, amt) {
+  const ex = document.getElementById('receipt-modal');
+  if (ex) ex.remove();
+  const pdv = Math.round(amt*0.1667);
+  const m = document.createElement('div');
+  m.id = 'receipt-modal';
+  m.style='position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;z-index:200;backdrop-filter:blur(4px)';
+  m.innerHTML=`<div style="max-width:300px;width:90%">
+    <div class="receipt">
+      <div class="receipt-head">SMART PARKING · RAČUN</div>
+      <div class="receipt-body">
+        <div class="receipt-row"><span>Tablica</span><span>${plate}</span></div>
+        <div class="receipt-row"><span>Mesto</span><span>${spot}</span></div>
+        <div class="receipt-row"><span>Osnova</span><span>${amt-pdv} RSD</span></div>
+        <div class="receipt-row"><span>PDV 20%</span><span>${pdv} RSD</span></div>
+        <div class="receipt-total"><span>UKUPNO</span><span>${amt} RSD</span></div>
+      </div>
+      <div class="receipt-status">✓ PLAĆENO · Auto-charge · Visa ****4521</div>
+    </div>
+    <div style="text-align:center;margin-top:12px">
+      <button class="btn btn-primary" onclick="document.getElementById('receipt-modal').remove()">Zatvori</button>
+    </div></div>`;
+  document.body.appendChild(m);
+}
+
+function renderSessions() {
+  const tbody = document.getElementById('sessions-tbody');
+  const active = DB.sessions.filter(s=>s.status==='active');
+  if (!active.length) {
+    tbody.innerHTML='<tr><td colspan="7" style="padding:12px;color:var(--muted);text-align:center">Nema aktivnih sesija</td></tr>'; return;
+  }
+
+  const isPowerOff  = !SYS.power && SYS.upsLevel === 0;
+  const isNight     = SYS.planned;
+  const isUPS       = !SYS.power && SYS.upsLevel > 0;
+
+  // Određuje status tag i boju iznosa za svaku sesiju
+  function sessionStatus(s) {
+    if (isPowerOff)  return {tag:'tag-r', lbl:'Sistem offline',    amtCol:'var(--muted)', btn:false};
+    if (isNight)     return {tag:'tag-y', lbl:'Naplata zamrznuta', amtCol:'var(--muted)', btn:false};
+    if (isUPS)       return {tag:'tag-y', lbl:'UPS · naplata teče', amtCol:'var(--amber)', btn:false};
+    return           {tag:'tag-b', lbl:'Aktivna',            amtCol:'var(--amber)', btn:true};
+  }
+
+  tbody.innerHTML = active.map(s=>{
+    const dur  = Math.round((now()-s.entry)/60000);
+    const amt  = Math.round(dur/60*RATE);
+    const st   = sessionStatus(s);
+    return `<tr style="border-bottom:1px solid var(--border);opacity:${isPowerOff?'.45':'1'}">
+      <td style="padding:8px;font-family:var(--mono);font-size:11px">${s.plate}</td>
+      <td style="padding:8px">${s.spot}</td>
+      <td style="padding:8px;color:var(--muted)">${fmt(s.entry)}</td>
+      <td style="padding:8px">${dur} min</td>
+      <td style="padding:8px;color:${st.amtCol}">${isNight||isPowerOff?'— zamrznuto':amt+' RSD'}</td>
+      <td style="padding:8px"><span class="tag ${st.tag}">${st.lbl}</span></td>
+      <td style="padding:8px">${st.btn
+        ? `<button class="btn btn-danger" style="font-size:10px;padding:3px 8px" onclick="closeSession('${s.plate}','${s.spot}',${amt})">Naplati</button>`
+        : `<span style="font-size:10px;color:var(--muted)">${isPowerOff?'sistem ugašen':isNight?'jutarnji scan':'—'}</span>`
+      }</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ════════════════════════════════════════════
+   ANPR
+════════════════════════════════════════════ */
+let imageData = null;
+let anprBusy  = false;
+
+function resetANPR() {
+  imageData = null; anprBusy = false;
+  document.getElementById('anpr-result').style.display  = 'none';
+  document.getElementById('anpr-loading').style.display = 'none';
+  document.getElementById('upload-zone').innerHTML = `
+    <input type="file" id="file-input" accept="image/*" onchange="handleFile(event)"/>
+    <div style="font-size:24px;margin-bottom:6px">📸</div>
+    <div style="font-size:13px;font-weight:600">Uploaduj sliku tablice</div>
+    <div class="upload-hint">JPG · PNG · Claude Vision API čita tablicu</div>`;
+  setPipeline('','',true);
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('drag');
+  const f=e.dataTransfer.files[0];
+  if(f&&f.type.startsWith('image/')) readImg(f);
+}
+function handleFile(e) { const f=e.target.files[0]; if(f) readImg(f); }
+function readImg(f) {
+  const r=new FileReader();
+  r.onload=ev=>{
+    imageData=ev.target.result.split(',')[1];
+    document.getElementById('upload-zone').innerHTML=
+      `<input type="file" id="file-input" accept="image/*" onchange="handleFile(event)" style="display:none"/>
+       <img src="${ev.target.result}" style="max-height:80px;border-radius:6px"/>
+       <div class="upload-hint" style="margin-top:6px">${f.name} · Analiza pokrenuta...</div>`;
+    runANPR(null,null,null);
+  };
+  r.readAsDataURL(f);
+}
+
+function demoPlate(plate, status) {
+  if (anprBusy) return;
+  // NE skrivamo upload zone, samo pokrećemo analizu
+  runANPR(plate, 0.93+Math.random()*.06, status);
+}
+
+async function runANPR(knownPlate, knownConf, knownStatus) {
+  if (anprBusy) return;
+  if (!SYS.power && SYS.upsLevel===0) {
+    addLog('ANPR_FAIL | sistem ugašen | nema napajanja', 'err'); return;
+  }
+  anprBusy = true;
+  document.getElementById('anpr-result').style.display  = 'none';
+  document.getElementById('anpr-loading').style.display = 'block';
+  setPipeline('active', 0);
+  addLog('ANPR_START | induktivna petlja detektovala vozilo', 'info');
+  await sleep(350);
+
+  let plate, conf;
+
+  if (knownPlate) {
+    setPipeline('active', 1);
+    await sleep(500);
+    plate=knownPlate; conf=knownConf;
+    addLog(`OCR_RESULT | ${plate} | conf:${(conf*100).toFixed(0)}%`, 'ok');
+    setPipeline('done', 1);
+  } else if (imageData) {
+    setPipeline('active', 1);
+    document.getElementById('anpr-loading-msg').textContent='Claude Vision API analizira sliku...';
+    try {
+      const resp = await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          model:'claude-sonnet-4-6', max_tokens:256,
+          messages:[{role:'user',content:[
+            {type:'image',source:{type:'base64',media_type:'image/jpeg',data:imageData}},
+            {type:'text',text:'Pronađi broj registarske tablice vozila na ovoj slici. Odgovori ISKLJUČIVO u JSON formatu bez ikakvog drugog teksta:\n{"plate":"XX 000 XX","confidence":0.95}\nAko ne vidiš tablicu vozila: {"plate":null,"confidence":0,"note":"nije tablica"}'}
+          ]}]
+        })
+      });
+      const data = await resp.json();
+      const txt  = (data.content&&data.content[0]&&data.content[0].text)||'{}';
+      let parsed;
+      try { parsed=JSON.parse(txt.replace(/```json|```/g,'').trim()); }
+      catch { const m=txt.match(/\{[\s\S]*?\}/); parsed=m?JSON.parse(m[0]):{plate:null,confidence:0}; }
+
+      if (!parsed.plate) {
+        setPipeline('error', 1);
+        addLog(`OCR_FAIL | tablica nije prepoznata na slici | ${parsed.note||''}`, 'err');
+        showANPRError('Tablica nije prepoznata. Pokušaj sa jasnom slikom tablice ili koristi demo dugmiće.');
+        anprBusy=false; return;
+      }
+      plate=parsed.plate; conf=parsed.confidence||0.9;
+      addLog(`OCR_RESULT | ${plate} | conf:${(conf*100).toFixed(0)}%`, 'ok');
+      setPipeline('done', 1);
+    } catch(err) {
+      setPipeline('error', 1);
+      addLog('API_ERROR | '+err.message, 'err');
+      showANPRError('Greška pri pozivu Claude API. Provjeri internet konekciju ili koristi demo dugmiće.');
+      anprBusy=false; return;
+    }
+  } else { anprBusy=false; return; }
+
+  // Confidence check
+  if (conf < 0.85) {
+    setPipeline('error', 2);
+    addLog(`LOW_CONF | ${(conf*100).toFixed(0)}% < 85% → manual_review`, 'warn');
+    showANPRResult(plate, conf, 'review', null);
+    anprBusy=false; return;
+  }
+
+  // DB lookup
+  setPipeline('active', 2);
+  await sleep(300);
+  const vehicle = DB.vehicles[plate]||{status:'unknown'};
+  addLog(`DB_LOOKUP | ${plate} | ${vehicle.status}`, vehicle.status==='blacklist'?'err':'ok');
+  setPipeline('done', 2);
+
+  // Decision
+  setPipeline('active', 3);
+  await sleep(250);
+  const decision = vehicle.status==='blacklist' ? 'deny' : 'open';
+  setPipeline('done', 3);
+
+  // Barrier
+  setPipeline('active', 4);
+  await sleep(300);
+  showANPRResult(plate, conf, decision, vehicle);
+  if (decision==='open') { openBarrier(); createSession(plate, vehicle); }
+  setPipeline('done', 4);
+  document.getElementById('anpr-loading').style.display='none';
+  anprBusy=false;
+}
+
+function showANPRError(msg) {
+  document.getElementById('anpr-loading').style.display='none';
+  document.getElementById('anpr-result').style.display='block';
+  document.getElementById('anpr-plate').textContent='???';
+  const box=document.getElementById('anpr-decision');
+  box.className='verdict verdict-err';
+  box.innerHTML=msg+'<br><br><button class="btn" onclick="resetANPR()" style="margin-top:4px">↺ Poništi i pokušaj ponovo</button>';
+  document.getElementById('conf-fill').style.width='0%';
+  document.getElementById('conf-val').textContent='—';
+  document.getElementById('anpr-meta').innerHTML='';
+  anprBusy=false;
+}
+
+function showANPRResult(plate, conf, decision, vehicle) {
+  document.getElementById('anpr-loading').style.display='none';
+  document.getElementById('anpr-result').style.display='block';
+  document.getElementById('anpr-plate').textContent=plate;
+  const pct=Math.round(conf*100);
+  document.getElementById('conf-fill').style.width=pct+'%';
+  document.getElementById('conf-fill').style.background=pct>=85?'var(--green)':pct>=60?'var(--amber)':'var(--red)';
+  document.getElementById('conf-val').textContent=pct+'%';
+  const box=document.getElementById('anpr-decision');
+  const meta=document.getElementById('anpr-meta');
+  if (decision==='open') {
+    box.className='verdict verdict-ok';
+    box.textContent='✓ OTVORI RAMPU — vozilo autorizovano';
+    addLog(`BARRIER_OPEN | ${plate} | reason:${vehicle.status}`, 'ok');
+    meta.innerHTML=`<span class="tag tag-g">autorizovano</span><span class="tag tag-b">${vehicle.status}</span>`;
+  } else if (decision==='deny') {
+    box.className='verdict verdict-err';
+    box.textContent='✕ ODBIJ — crna lista';
+    addLog(`BARRIER_DENY | ${plate} | blacklist`, 'err');
+    meta.innerHTML=`<span class="tag tag-r">crna lista</span>`;
+  } else {
+    box.className='verdict verdict-warn';
+    box.textContent='⚠ MANUELNA PROVERA — niska pouzdanost';
+    meta.innerHTML=`<span class="tag tag-y">manual review</span>`;
+  }
+}
+
+function createSession(plate, vehicle) {
+  const free=DB.spots.find(s=>s.status==='free');
+  if (!free) { addLog('NO_FREE_SPOT | parking pun','err'); return; }
+  free.status = vehicle.status==='reserved'?'reserved':'session';
+  free.plate  = plate; free.entry = now();
+  DB.sessions.push({plate,spot:free.id,entry:now(),status:'active'});
+  addLog(`SESSION_CREATE | ${plate} | spot:${free.id}`, 'info');
+  addLog(`MQTT_PUBLISH | parking/spot/${free.id}/status | OCC`, 'sys');
+  renderMap(); renderSessions();
+}
+
+/* PHOTOCELL */
+function setPhotocell(active) {
+  const svg = document.querySelector('#barrier-arm + * ~ * circle, svg circle[stroke="var(--green)"]');
+  // Nađi sve circle i line elemente fotoćelije u SVG
+  const barrierSVG = document.querySelector('svg');
+  if (!barrierSVG) return;
+  // Fotoćelija: zeleni elementi (krugovi i linija)
+  barrierSVG.querySelectorAll('circle[stroke="var(--green)"], line[stroke="var(--green)"]').forEach(el => {
+    el.style.opacity = active ? '1' : '0.2';
+    el.style.stroke  = active ? 'var(--green)' : 'var(--muted)';
+  });
+  const label = document.querySelector('.card-body .text-muted');
+  // Ažuriraj tekst fotoćelije ispod rampe
+  const muted = document.querySelectorAll('.card-body .text-muted');
+  muted.forEach(el => {
+    if (el.textContent.includes('IR fotoćelija')) {
+      el.innerHTML = active
+        ? 'IR fotoćelija: <span style="color:var(--green)">aktivna</span>'
+        : 'IR fotoćelija: <span style="color:var(--red)">neaktivna</span>';
+    }
+  });
+}
+
+/* BARRIER */
+let barrierOpen=false;
+function openBarrier(failOpen=false) {
+  if (barrierOpen && !failOpen) return;
+  barrierOpen=true;
+  const col = failOpen ? 'var(--amber)' : 'var(--green)';
+  const lbl = failOpen ? 'FAIL-OPEN' : 'OTVORENA';
+  const tcls= failOpen ? 'tag tag-y' : 'tag tag-g';
+  document.getElementById('barrier-arm').classList.add('open');
+  document.getElementById('barrier-dot').style.background=col;
+  document.getElementById('barrier-tag').className=tcls;
+  document.getElementById('barrier-tag').textContent=lbl;
+  document.getElementById('barrier-status-text').textContent=lbl;
+  document.getElementById('barrier-status-text').style.color=col;
+  document.getElementById('barrier-light').setAttribute('fill',col);
+  // Fail-open nema auto-close — ostaje dok se struja ne vrati
+  if (!failOpen) {
+    setTimeout(()=>{
+      barrierOpen=false;
+      document.getElementById('barrier-arm').classList.remove('open');
+      document.getElementById('barrier-dot').style.background='var(--red)';
+      document.getElementById('barrier-tag').className='tag tag-r';
+      document.getElementById('barrier-tag').textContent='ZATVORENA';
+      document.getElementById('barrier-status-text').textContent='ZATVORENA';
+      document.getElementById('barrier-status-text').style.color='var(--red)';
+      document.getElementById('barrier-light').setAttribute('fill','var(--red)');
+      addLog('BARRIER_CLOSE | auto-close | 8s','info');
+    }, 8000);
+  }
+}
+
+/* PIPELINE */
+function setPipeline(state, step, reset) {
+  for(let i=1;i<=5;i++) {
+    const el=document.getElementById('pip'+i);
+    if (!el) continue;
+    if (reset) { el.className='pip-step'; continue; }
+    el.className='pip-step'+(i-1<step?' done':i-1===step?' '+state:'');
+  }
+}
+
+/* ════════════════════════════════════════════
+   CAMERA STATUS GRID
+════════════════════════════════════════════ */
+function renderCamGrid() {
+  const grid=document.getElementById('cam-status-grid');
+  if (!grid) return;
+  const offlineCount = DB.cameras.filter(c=>c.status!=='online').length;
+  const nightMode = SYS.planned && offlineCount===0;
+  const dot  = document.getElementById('cam-status-dot');
+  const tag  = document.getElementById('cam-status-tag');
+  if (nightMode) {
+    dot.style.background='var(--amber)'; tag.className='tag tag-y'; tag.textContent='NOĆNI MODE';
+  } else if (offlineCount===0) {
+    dot.style.background='var(--green)'; tag.className='tag tag-g'; tag.textContent='SVE ONLINE';
+  } else {
+    dot.style.background='var(--red)'; tag.className='tag tag-r'; tag.textContent=offlineCount+' OFFLINE';
+  }
+
+  grid.innerHTML = DB.cameras.map(c=>{
+    const isNight = SYS.planned && c.status==='online';
+    const col  = c.status==='online'?(isNight?'var(--amber)':'var(--green)'):c.status==='degraded'?'var(--amber)':'var(--red)';
+    const lbl  = c.status==='online'?(isNight?'NOĆNI MODE':'ONLINE'):c.status==='degraded'?'DEGRADED':'OFFLINE';
+    const tcls = c.status==='online'?(isNight?'tag-y':'tag-g'):c.status==='degraded'?'tag-y':'tag-r';
+    const slotCls = c.status!=='online'?c.status:(isNight?'night':'');
+    const screenCls = c.status!=='online'?'cam-screen offline-screen':'cam-screen';
+    const screenContent = c.status!=='online'
+      ? `<div style="text-align:center"><div style="font-size:22px">📵</div><div style="font-size:10px;color:var(--red);margin-top:4px">${c.status==='degraded'?'SIGNAL SLAB':'SIGNAL IZGUBLJEN'}</div><div style="font-size:9px;color:var(--muted);margin-top:2px">${c.failure_type||'hardware fault'}</div></div>`
+      : isNight
+        ? `<div style="text-align:center;padding:8px"><div style="font-size:18px">🌙</div><div style="font-size:9px;color:var(--amber);margin-top:4px">Snima · AI analiza isključena</div><div style="font-size:9px;color:var(--muted);margin-top:2px">T1/T2 scan → 07:00</div></div>`
+        : `<div style="font-size:9px;color:var(--muted);text-align:center;padding:8px">${c.spots.length?c.spots.join(' · '):'Ulaz · Izlaz'}</div>`;
+    return `<div class="cam-slot ${slotCls}"><div class="cam-header"><div class="card-dot" style="background:${col}"></div><span style="font-size:10px;font-weight:700">${c.id}</span><span class="tag ${tcls}" style="margin-left:auto;font-size:8px">${lbl}</span></div><div class="${screenCls}">${screenContent}${c.status==='online'&&!isNight?`<div class="cam-zone-badge">${c.zone}</div>`:''}</div></div>`;
+  }).join('');
+}
+
+/* ════════════════════════════════════════════
+   CAMERA SCENARIOS
+════════════════════════════════════════════ */
+const scenarios = {
+  overstay: {
+    steps:[
+      {msg:'T1_SNAPSHOT | zona B | 09:30 | vozila: NS456CD@B2, KG111PP@B4', type:''},
+      {msg:'T2_SNAPSHOT | zona B | 10:00 | vozila: NS456CD@B2', type:''},
+      {msg:'DIFF_ANALYSIS | NS456CD prisutan u T1 i T2 | ista pozicija B2', type:'warn'},
+      {msg:'DB_CHECK | NS456CD | status:PAID | plaćeno 09:45 | nema ANPR izlaza', type:'warn'},
+      {msg:'OVERSTAY_DETECTED | NS456CD | B2 | plaćanje isteklo | kreiran dug', type:'err'},
+      {msg:'ALERT_SENT | push → NS456CD | admin notifikacija', type:'err'},
+    ],
+    verdict:'err', tag:'OVERSTAY',
+    result:'NS 456 CD detektovano na mestu B2 u oba snimka. Plaćanje isteklo u 09:45, vozilo nije napustilo parking. Kreiran dug. Alarm poslat korisniku i adminu.',
+    action:'DEBT_CREATE | NS456CD | B2 | overstay',
+    camEffect: null,
+  },
+  wrongtype: {
+    steps:[
+      {msg:'T2_SNAPSHOT | zona A | AI klasifikacija...', type:'info'},
+      {msg:'OBJECT_DETECTED | A3 | tip:motorcycle | confidence:0.93', type:'warn'},
+      {msg:'DB_CHECK | A3 | allowed_type:car | detected:motorcycle', type:'warn'},
+      {msg:'TYPE_MISMATCH | A3 | motor na mestu za auto', type:'err'},
+      {msg:'BILLING_SUSPEND | A3 | čeka manuelnu proveru', type:'warn'},
+      {msg:'ALERT_SENT | admin | tip_vozila_nepravilan | A3', type:'err'},
+    ],
+    verdict:'warn', tag:'TIP VOZILA',
+    result:'AI detektovao motocikl na mestu A3 (predviđeno za automobile, confidence 93%). Naplata suspendovana. Alarm poslat adminu za manuelnu proveru.',
+    action:'WRONG_VEHICLE_TYPE | A3 | motorcycle | admin_alert',
+    camEffect: null,
+  },
+  wrongspot: {
+    steps:[
+      {msg:'T2_SNAPSHOT | sve zone | analiza rezervacija...', type:'info'},
+      {msg:'RESERVATION_CHECK | NS456CD → rezervisano B2', type:'info'},
+      {msg:'CAMERA_DETECT | NS456CD vidljiv na C1 | ne na B2', type:'warn'},
+      {msg:'RESERVATION_MISMATCH | NS456CD | reserved:B2 | actual:C1', type:'warn'},
+      {msg:'PUSH_SENT | NS456CD | "Vaše mesto je B2, trenutno ste na C1"', type:'info'},
+      {msg:'LOG_EVENT | reservation_mismatch | no_alarm (plaćeno)', type:''},
+    ],
+    verdict:'warn', tag:'POGREŠNO MESTO',
+    result:'NS 456 CD rezervisalo B2 ali parkiralo na C1. Vozač je obavešten push notifikacijom. Nema alarma adminu — vozač je plaćen.',
+    action:'RESERVATION_MISMATCH | NS456CD | B2→C1 | push_sent',
+    camEffect: null,
+  },
+  ghost: {
+    steps:[
+      {msg:'T1_SNAPSHOT | zona A | A5: prazno', type:''},
+      {msg:'T2_SNAPSHOT | zona A | A5: vozilo BG999ZZ', type:'warn'},
+      {msg:'ANPR_LOG_CHECK | BG999ZZ | nema zapisa o ulasku danas', type:'err'},
+      {msg:'GHOST_VEHICLE | BG999ZZ@A5 | moguć tailgating ili lažna tablica', type:'err'},
+      {msg:'FORENSIC_INVESTIGATION | event_id:ghost_001 | foto sačuvana', type:'err'},
+      {msg:'ALERT_SENT | admin | istraga pokrenuta', type:'err'},
+    ],
+    verdict:'err', tag:'DUH VOZILO',
+    result:'BG 999 ZZ vidljivo na kameri ali nema ANPR zapisa o ulasku. Moguć tailgating ili lažna tablica. Forenzička istraga pokrenuta. Alarm adminu.',
+    action:'GHOST_VEHICLE | BG999ZZ@A5 | no_entry_log | investigation',
+    camEffect: null,
+  },
+  sensor: {
+    steps:[
+      {msg:'SENSOR_A4 | status:FREE | dist:498cm', type:''},
+      {msg:'T2_SNAPSHOT | zona A | A4: vozilo BG444MN vidljivo', type:'warn'},
+      {msg:'CROSS_REF | sensor:FREE vs camera:OCC | neslaganje!', type:'err'},
+      {msg:'SENSOR_FAULT | A4 | proglašen offline', type:'err'},
+      {msg:'CAMERA_OVERRIDE | A4 | status preuzima kamera (OCC)', type:'warn'},
+      {msg:'TECH_ALERT | senzor A4 | zamena potrebna', type:'err'},
+    ],
+    verdict:'err', tag:'GREŠKA SENZORA',
+    result:'Senzor A4 javlja FREE ali kamera vidi zauzeto. Neslaganje potvrđeno — senzor proglašen offline. Kamera preuzima verifikaciju. Alarm tehničkom osoblju.',
+    action:'SENSOR_FAULT | A4 | offline | tech_alert',
+    camEffect: null,
+  },
+  camfault: {
+    steps:[
+      {msg:'CAM_B | signal izgubljen | timeout 30s', type:'warn'},
+      {msg:'CAM_B | poslednji snapshot sačuvan kao dokaz', type:'info'},
+      {msg:'CAM_B | status→OFFLINE | failure_type:hardware', type:'err'},
+      {msg:'ZONE_B | degraded_mode | samo senzori aktivni', type:'warn'},
+      {msg:'POLICY | nepoznate tablice iz zone B → propusti (benefit of doubt)', type:'warn'},
+      {msg:'ALERT_SENT | admin + tehničar | CAM_B zahteva servis', type:'err'},
+    ],
+    verdict:'warn', tag:'KVAR KAMERE',
+    result:'CAM_B otkazala. Zona B prelazi u degraded mode — samo senzori aktivni, nema vizuelne verifikacije. Nepoznate tablice iz zone B se propuštaju. Alarm admin i tehničaru.',
+    action:'CAM_B | OFFLINE | zone_B_degraded | service_required',
+    camEffect: 'camB_offline',
+  },
+};
+
+function resetCamScenario() {
+  // Resetuj scenario kartice
+  document.querySelectorAll('.scenario-card').forEach(c=>c.classList.remove('running','done'));
+
+  // Sakrij rezultat
+  document.getElementById('cam-result-card').style.display='none';
+
+  // Vrati kamere na stanje koje odgovara trenutnom SYS modu
+  if (!SYS.power && SYS.upsLevel === 0) {
+    // Sistem ugašen — sve kamere offline
+    DB.cameras.forEach(c=>{ c.status='offline'; c.failure_type='no power'; });
+    SYS.offlineCams = DB.cameras.map(c=>c.id);
+  } else if (SYS.planned) {
+    // Noćni mod — kamere online ali night mode
+    DB.cameras.forEach(c=>{ c.status='online'; delete c.failure_type; });
+    SYS.offlineCams=[];
+  } else {
+    // Normalan rad — sve kamere online
+    DB.cameras.forEach(c=>{ c.status='online'; delete c.failure_type; });
+    SYS.offlineCams=[];
+  }
+
+  renderCamGrid();
+  renderMap();
+  updateSysBadge();
+  clearLog('cam-log');
+  addLog('RESET | kamere vraćene na trenutni status sistema', 'info', 'cam-log');
+}
+
+function runScenario(id) {
+  document.querySelectorAll('.scenario-card').forEach(c=>c.classList.remove('running','done'));
+  const card=document.getElementById('sc-'+id);
+  card.classList.add('running');
+  const sc=scenarios[id];
+  clearLog('cam-log');
+  document.getElementById('cam-result-card').style.display='none';
+
+  // Reset kamera na normalno pre svakog scenarija
+  // (osim ako je sistem u posebnom stanju)
+  if (!SYS.planned && SYS.power) {
+    DB.cameras.forEach(c=>{ c.status='online'; delete c.failure_type; });
+    SYS.offlineCams=[];
+  }
+
+  addLog('SCENARIO_START | '+id, 'info', 'cam-log');
+
+  sc.steps.forEach((step,i)=>{
+    setTimeout(()=>{
+      addLog(step.msg, step.type, 'cam-log');
+      // Kamera effect pri kvaru
+      if (i===sc.steps.length-1 && sc.camEffect==='camB_offline') {
+        DB.cameras[1].status='offline';
+        DB.cameras[1].failure_type='hardware fault';
+        SYS.offlineCams=['CAM_B'];
+        renderCamGrid();
+        renderMap(); // update cam badges na mapi
+        updateSysBadge();
+        // Sinhronizuj sa outage logom
+        addLog('CAM_B_OFFLINE | zona B degraded | senzori aktivni', 'err', 'outage-log');
+      }
+      if (i===sc.steps.length-1) {
+        card.classList.remove('running'); card.classList.add('done');
+        showCamResult(sc);
+      }
+    }, i*600);
+  });
+}
+
+function showCamResult(sc) {
+  const rc=document.getElementById('cam-result-card');
+  rc.style.display='';
+  const dot=document.getElementById('cr-dot');
+  const tag=document.getElementById('cr-tag');
+  const col=sc.verdict==='err'?'var(--red)':sc.verdict==='ok'?'var(--green)':'var(--amber)';
+  dot.style.background=col;
+  tag.className='tag '+(sc.verdict==='err'?'tag-r':sc.verdict==='ok'?'tag-g':'tag-y');
+  tag.textContent=sc.tag;
+  document.getElementById('cam-result-body').innerHTML=
+    `<p style="font-size:12px;color:var(--sub);margin-bottom:10px">${sc.result}</p>
+     <div class="verdict verdict-${sc.verdict==='err'?'err':sc.verdict==='ok'?'ok':'warn'}">
+       <code style="font-family:var(--mono);font-size:10px">${sc.action}</code>
+     </div>`;
+}
+
+/* SNAPSHOT UPLOAD */
+let t1Data=null, t2Data=null;
+function loadSnap(which, ev) {
+  const f=ev.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=e=>{
+    const data=e.target.result;
+    document.getElementById(which+'-preview').innerHTML=
+      `<img src="${data}" style="max-height:72px;border-radius:6px"/>`;
+    if(which==='t1') t1Data=data.split(',')[1];
+    else t2Data=data.split(',')[1];
+    if(t1Data&&t2Data) document.getElementById('analyze-btn').disabled=false;
+  };
+  r.readAsDataURL(f);
+}
+
+async function analyzeSnapshots() {
+  if(!t1Data||!t2Data) return;
+  const btn=document.getElementById('analyze-btn');
+  btn.disabled=true; btn.textContent='⏳ Analiza u toku...';
+  clearLog('cam-log');
+  addLog('T1+T2 primljeni | šaljemo na Claude API...', 'info', 'cam-log');
+
+  try {
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6', max_tokens:800,
+        messages:[{role:'user',content:[
+          {type:'image',source:{type:'base64',media_type:'image/jpeg',data:t1Data}},
+          {type:'image',source:{type:'base64',media_type:'image/jpeg',data:t2Data}},
+          {type:'text',text:`Ovo su dva snimka iste parking zone — T1 (prva slika) i T2 (druga, +30 minuta).
+Analiziraj razlike. Odgovori SAMO JSON bez ikakvog drugog teksta:
+{"vehicles_t1":["opis vozila ili objekata u T1"],"vehicles_t2":["opis vozila u T2"],"stayed":["ostala vozila"],"left":["otišla vozila"],"arrived":["nova vozila"],"anomalies":["detektovane nepravilnosti"],"verdict":"OK|OVERSTAY|ANOMALY|UNCLEAR"}`}
+        ]}]
+      })
+    });
+    const data=await resp.json();
+    const txt=(data.content&&data.content[0]&&data.content[0].text)||'{}';
+    let p;
+    try { p=JSON.parse(txt.replace(/```json|```/g,'').trim()); }
+    catch { p={verdict:'UNCLEAR',anomalies:['Ne mogu da parsem API odgovor']}; }
+
+    addLog('CLAUDE_RESPONSE | analiza završena', 'ok', 'cam-log');
+    if(p.stayed?.length)   addLog('STAYED: '+p.stayed.join(', '),'warn','cam-log');
+    if(p.left?.length)     addLog('LEFT: '+p.left.join(', '),'ok','cam-log');
+    if(p.arrived?.length)  addLog('NEW: '+p.arrived.join(', '),'info','cam-log');
+    if(p.anomalies?.length) p.anomalies.forEach(a=>addLog('ANOMALY: '+a,'err','cam-log'));
+    addLog('VERDICT: '+p.verdict, p.verdict==='OK'?'ok':'err','cam-log');
+
+    const vtype=p.verdict==='OK'?'ok':p.verdict==='UNCLEAR'?'warn':'err';
+    showCamResult({
+      verdict:vtype,tag:p.verdict,
+      result:`Ostala: ${(p.stayed||[]).join(', ')||'—'} | Otišla: ${(p.left||[]).join(', ')||'—'} | Nova: ${(p.arrived||[]).join(', ')||'—'}`,
+      action:'T1_T2_DIFF | '+p.verdict+(p.anomalies?.length?' | anomalies:'+p.anomalies.length:''),
+    });
+  } catch(e) {
+    addLog('API_ERROR: '+e.message,'err','cam-log');
+  }
+  btn.disabled=false; btn.textContent='🧠 Analiziraj sa Claude API';
+}
+
+/* ════════════════════════════════════════════
+   OUTAGE — utiče na sve tabove
+════════════════════════════════════════════ */
+let outageActive=false, outageType=null, upsInterval=null;
+
+function oLog(msg,type){ addLog(msg,type,'outage-log'); }
+
+function setOutageUI(label, sublabel, boxCls, dotColor, tagCls, tagText) {
+  document.getElementById('outage-label').textContent=label;
+  document.getElementById('outage-label').style.color=
+    boxCls==='outage-ok'?'var(--green)':boxCls==='outage-warn'?'var(--amber)':'var(--red)';
+  document.getElementById('outage-sub').textContent=sublabel;
+  document.getElementById('outage-status-box').className='outage-status-box '+boxCls;
+  document.getElementById('outage-dot').style.background=dotColor;
+  document.getElementById('outage-tag').className='tag '+tagCls;
+  document.getElementById('outage-tag').textContent=tagText;
+}
+
+function triggerOutage() {
+  if(outageActive) return;
+  outageActive=true; outageType='unplanned';
+  SYS.power=false; SYS.upsLevel=100;
+  document.getElementById('btn-outage').disabled=true;
+  document.getElementById('btn-planned').disabled=true;
+  document.getElementById('btn-restore').disabled=false;  // struje nema → može da se vrati
+  document.getElementById('btn-recover').disabled=true;   // recover tek kad se vrati struja
+
+  setOutageUI('Nestanak struje','Sistem radi na UPS bateriji — rampe otvorene (fail-open)','outage-err','var(--red)','tag-r','NESTANAK STRUJE');
+  updateSysBadge();
+
+  // Mapa: rampa otvorena vizuelno — ne mijenjamo spotove, samo badge
+  addLog('POWER_OUTAGE | rampe→FAIL-OPEN | UPS aktivan', 'err', 'log-body');
+  renderSessions();
+
+  oLog('POWER_OUTAGE | ac_input=LOST | switching to battery','err');
+  oLog('BARRIER_ENTRY | FAIL-OPEN | bezbednosno stanje','warn');
+  oLog('BARRIER_EXIT  | FAIL-OPEN | bezbednosno stanje','warn');
+  oLog(`SNAPSHOT_SAVED | ${DB.spots.filter(s=>s.status!=='free').length} vozila evidentirana pre nestanka`,'info');
+  document.getElementById('power-src').textContent='UPS (baterija)';
+  document.getElementById('power-src').style.color='var(--amber)';
+
+  upsInterval=setInterval(()=>{
+    SYS.upsLevel=Math.max(0, SYS.upsLevel-4);
+    document.getElementById('ups-pct').textContent=SYS.upsLevel+'%';
+    document.getElementById('ups-bar').style.width=SYS.upsLevel+'%';
+    document.getElementById('ups-bar').style.background=SYS.upsLevel>50?'var(--green)':SYS.upsLevel>20?'var(--amber)':'var(--red)';
+    document.getElementById('ups-runtime').textContent='~'+Math.round(SYS.upsLevel/4)+' min';
+    updateSysBadge();
+    if(SYS.upsLevel===20) { oLog('UPS_WARNING | bat=20% | pripremamo gašenje','warn'); renderSessions(); }
+    if(SYS.upsLevel===0) {
+      clearInterval(upsInterval);
+      setOutageUI('Sistem ugašen','Baterija prazna — svi servisi offline','outage-err','var(--red)','tag-r','OFFLINE');
+      oLog('UPS_DEAD | bat=0% | system_offline','err');
+      addLog('SYSTEM_OFFLINE | UPS prazna | servisi ugašeni','err','log-body');
+      renderSessions();
+
+      // Fail-open: otvori rampu i ostavi otvorenu, fotoćelija neaktivna
+      openBarrier(true);
+      setPhotocell(false);
+      addLog('BARRIER_FAIL_OPEN | bez napajanja → rampa ostaje otvorena','warn','log-body');
+      addLog('PHOTOCELL | neaktivna | nema napajanja','warn','log-body');
+      oLog('BARRIER_FAIL_OPEN | mehanički fail-open aktiviran','warn');
+      oLog('PHOTOCELL_OFF | nema napajanja | IR zrak ugašen','warn');
+
+      // Sve kamere offline
+      DB.cameras.forEach(c=>{ c.status='offline'; c.failure_type='no power'; });
+      SYS.offlineCams = DB.cameras.map(c=>c.id);
+      renderCamGrid();
+      addLog('ALL_CAMERAS_OFFLINE | nema napajanja','err','log-body');
+      oLog('ALL_CAMERAS_OFFLINE | 4/4 offline | nema vizuelne verifikacije','err');
+
+      updateSysBadge();
+      renderMap();
+      // Blokira ANPR unos
+      document.getElementById('upload-zone').style.opacity='0.35';
+      document.getElementById('upload-zone').style.pointerEvents='none';
+      // recover se ne nudi direktno — mora prvo restore pa auto-recovery
+      // ostavimo btn-recover disabled, restore je jedini put
+    }
+  },400);
+}
+
+function triggerPlanned() {
+  if(outageActive) return;
+  outageActive=true; outageType='planned';
+  SYS.planned=true; SYS.power=false;
+  document.getElementById('btn-outage').disabled=true;
+  document.getElementById('btn-planned').disabled=true;
+  document.getElementById('btn-restore').disabled=true;   // nema nestanka struje, ne treba restore
+  document.getElementById('btn-recover').disabled=false;  // noćni mod → jutarnji scan dostupan
+
+  setOutageUI('Planirano gašenje','Sekvenca gašenja u toku...','outage-warn','var(--amber)','tag-y','GAŠENJE');
+  updateSysBadge();
+
+  // Sekvenca planiranog gašenja
+  const steps = [
+    {t:200,  fn:()=>{ oLog('PLANNED_SHUTDOWN | iniciran od vlasnika | 23:00','warn'); addLog('PLANNED_SHUTDOWN | noćno gašenje','warn','log-body'); }},
+    {t:600,  fn:()=>{
+      oLog('BILLING_FREEZE | zamrzavanje naplate za sve aktivne sesije','warn');
+      DB.sessions.filter(s=>s.status==='active').forEach(s=>
+        oLog(`  FREEZE | ${s.plate} | ${s.spot} | vreme zamrznuto do jutra`,'warn')
+      );
+    }},
+    {t:1100, fn:()=>{ oLog('PRE_SHUTDOWN_SNAPSHOT | AI snima sve zone...','info'); addLog('SNAPSHOT | stanje pred gašenje evidentirano','info','log-body'); }},
+    {t:1600, fn:()=>{
+      const n=DB.spots.filter(s=>s.status!=='free').length;
+      oLog(`VEHICLES_LOGGED | ${n} vozila evidentirana pre gašenja`,'info');
+    }},
+    {t:2100, fn:()=>{ oLog('parking-vision.service → STOPPED','warn'); }},
+    {t:2400, fn:()=>{ oLog('parking-sync.service → STOPPED | cloud sync završen','warn'); }},
+    {t:2700, fn:()=>{ oLog('parking-sensors.service → STOPPED','warn'); }},
+    {t:3000, fn:()=>{
+      // Kamere OSTAJU online — samo AI analiza staje
+      SYS.offlineCams=[];
+      renderCamGrid();
+      addLog('CAMERAS_NIGHT_MODE | snimanje aktivno · AI analiza isključena','warn','log-body');
+      addLog('CAMERAS_NIGHT_MODE | snimanje aktivno · T1/T2 scan → 07:00','warn','cam-log');
+      oLog('CAMERAS_NIGHT_MODE | status=ONLINE | AI_ANALYSIS=OFF | recording=ON','warn');
+    }},
+    {t:3300, fn:()=>{
+      setOutageUI('Noćni mode','Kamere snimaju · AI analiza → 07:00','outage-warn','var(--amber)','tag-y','NOĆNI MODE');
+      updateSysBadge(); renderMap();
+      oLog('SYSTEM_NIGHT | billing=FROZEN | cameras=RECORDING | AI_ANALYSIS=OFF','warn');
+      addLog('SYSTEM_NIGHT | noćni mode aktivan','warn','log-body');
+      // Noćni režim: rampa otvorena, fotoćelija neaktivna
+      openBarrier(true);
+      addLog('BARRIER_OPEN | noćni mode → rampa otvorena za slobodan izlaz','warn','log-body');
+      oLog('BARRIER_OPEN | noćni mode | slobodan prolaz do jutra','warn');
+      setPhotocell(false);
+      addLog('ANPR | sesije zamrznute do jutra | jutarnji scan u 07:00','warn','log-body');
+      renderSessions();
+    }},
+  ];
+  steps.forEach(s=>setTimeout(s.fn, s.t));
+}
+
+function restorePower() {
+  clearInterval(upsInterval);
+  SYS.power=true; SYS.planned=false; SYS.upsLevel=100;
+  document.getElementById('ups-pct').textContent='100%';
+  document.getElementById('ups-bar').style.width='100%';
+  document.getElementById('ups-bar').style.background='var(--green)';
+  document.getElementById('ups-runtime').textContent='~25 min';
+  document.getElementById('power-src').textContent='Mreža (AC)';
+  document.getElementById('power-src').style.color='var(--green)';
+  document.getElementById('btn-restore').disabled=true;  // struja se vraća, više nije potrebno
+  document.getElementById('btn-recover').disabled=true;  // recovery će se pokrenuti auto
+
+  setOutageUI('Struja vraćena','Sistem se podiže — čekaj...','outage-warn','var(--amber)','tag-y','RESTART');
+  updateSysBadge();
+
+  const steps = [
+    {t:300,  fn:()=>{ oLog('POWER_RESTORED | ac_input=OK','ok'); addLog('POWER_RESTORED | struja vraćena','ok','log-body'); }},
+    {t:800,  fn:()=>{ oLog('KERNEL_BOOT | montiranje filesystem...','info'); setOutageUI('Sistem se podiže','Kernel boot...','outage-warn','var(--amber)','tag-y','BOOT'); }},
+    {t:1400, fn:()=>{ oLog('SYSTEMD_START | pokretanje servisa...','info'); }},
+    {t:1900, fn:()=>{ oLog('parking-mqtt.service → STARTED','ok'); }},
+    {t:2300, fn:()=>{
+      oLog('parking-sensors.service → STARTED','ok');
+      addLog('SENSORS_ONLINE | senzori aktivni','ok','log-body');
+      setPhotocell(true);
+      addLog('PHOTOCELL | IR zrak aktivan','ok','log-body');
+    }},
+    {t:2700, fn:()=>{ oLog('parking-watchdog.service → STARTED | interval:8s','ok'); }},
+    {t:3100, fn:()=>{
+      oLog('parking-sync.service → STARTED | cloud sync aktivan','ok');
+      oLog('MQTT_BROKER | Mosquitto online | port:1883','info');
+      addLog('SYSTEM_BOOT_DONE | servisi podignuti | pokretanje recovery scana...','info','log-body');
+      // Boot završen — pokreni isti recovery scan kao jutarnji
+      setTimeout(()=>runRecovery(), 500);
+    }},
+  ];
+  steps.forEach(s=>setTimeout(s.fn, s.t));
+}
+
+function runRecovery() {
+  document.getElementById('btn-recover').disabled=true;
+  oLog('MORNING_RECOVERY_START | 07:00 | AI podiže sve kamere...','info');
+  addLog('RECOVERY_SCAN | jutarnji scan pokrenut','info','log-body');
+  addLog('RECOVERY_SCAN | jutarnji scan pokrenut','info','cam-log');
+
+  // Stanje pre gašenja
+  const wasHere = DB.sessions.filter(s=>s.status==='active');
+  // Simulacija: jedno vozilo je otišlo, jedno novo ušlo
+  const stayed  = wasHere.slice(0, Math.max(1, wasHere.length-1));
+  const left    = wasHere.slice(-1);
+  const newArr  = [{plate:'BG 999 ZZ', spot:'A1', entry: new Date(Date.now()-3900000)}];
+
+  // Pokažemo reconcile kartu odmah praznu — punimo je tokom skena
+  const rc = document.getElementById('reconcile-card');
+  rc.style.display = '';
+  const rb = document.getElementById('reconcile-body');
+  rb.innerHTML = `<div style="font-size:11px;color:var(--muted);padding:4px 0">⏳ Skeniranje u toku...</div>`;
+
+  function appendReconcile(html) {
+    const loading = rb.querySelector('[data-loading]');
+    if (loading) loading.remove();
+    rb.innerHTML += html;
+  }
+
+  const steps = [
+    // ── Faza 1: kamere se podižu ──────────────────────────────────
+    {t:300,  fn:()=>{ oLog('CAMERAS_INIT | podizanje kamera iz noćnog moda...','info'); }},
+    {t:800,  fn:()=>{
+      DB.cameras[0].status='online'; delete DB.cameras[0].failure_type;
+      renderCamGrid();
+      oLog('CAM_A | ONLINE | zona A aktivna','ok');
+    }},
+    {t:1200, fn:()=>{
+      DB.cameras[1].status='online'; delete DB.cameras[1].failure_type;
+      renderCamGrid();
+      oLog('CAM_B | ONLINE | zona B aktivna','ok');
+    }},
+    {t:1600, fn:()=>{
+      DB.cameras[2].status='online'; delete DB.cameras[2].failure_type;
+      DB.cameras[3].status='online'; delete DB.cameras[3].failure_type;
+      SYS.offlineCams=[];
+      renderCamGrid();
+      oLog('CAM_C + CAM_ENTRY | ONLINE | sve zone pokrivene','ok');
+      addLog('ALL_CAMERAS_ONLINE | AI analiza se pokreće','ok','log-body');
+      addLog('ALL_CAMERAS_ONLINE | sve kamere online','ok','cam-log');
+    }},
+
+    // ── Faza 2: AI skenira zone ───────────────────────────────────
+    {t:2000, fn:()=>{ oLog('AI_SCAN | T2 snapshot svih zona...','info'); addLog('AI_SCAN | skeniranje parkinga...','info','log-body'); }},
+    {t:2400, fn:()=>{
+      const zA = DB.spots.filter(s=>s.zone==='A'&&s.status!=='free');
+      oLog(`ZONE_A_SCAN | ${zA.length} vozila detektovana`,'info');
+      zA.forEach(s=>oLog(`  → ${s.plate||'—'} | mesto:${s.id} | vidljivo na kameri`,''));
+      addLog(`ZONE_A | ${zA.length} vozila skenirana`,'info','log-body');
+    }},
+    {t:3000, fn:()=>{
+      const zB = DB.spots.filter(s=>s.zone==='B'&&s.status!=='free');
+      oLog(`ZONE_B_SCAN | ${zB.length} vozila detektovana`,'info');
+      zB.forEach(s=>oLog(`  → ${s.plate||'—'} | mesto:${s.id} | vidljivo na kameri`,''));
+      addLog(`ZONE_B | ${zB.length} vozila skenirana`,'info','log-body');
+    }},
+    {t:3600, fn:()=>{
+      const zC = DB.spots.filter(s=>s.zone==='C'&&s.status!=='free');
+      oLog(`ZONE_C_SCAN | ${zC.length} vozila detektovana`,'info');
+      zC.forEach(s=>oLog(`  → ${s.plate||'—'} | mesto:${s.id} | vidljivo na kameri`,''));
+      addLog(`ZONE_C | ${zC.length} vozila skenirana`,'info','log-body');
+      oLog(`TOTAL_DETECTED | ${DB.spots.filter(s=>s.status!=='free').length} vozila na parkingu jutros`,'info');
+    }},
+
+    // ── Faza 3: poređenje sa pre-gašenjem ─────────────────────────
+    {t:4200, fn:()=>{
+      oLog(`CROSS_REF | pre gašenja: ${wasHere.length} vozila | jutarnji scan: ${stayed.length+newArr.length} vozila`,'info');
+      addLog(`CROSS_REF | ${wasHere.length} evidentirano pre noći → ${stayed.length+newArr.length} pronađeno jutros`,'info','log-body');
+    }},
+
+    // ── Kategorija A: ostala vozila ───────────────────────────────
+    {t:4700, fn:()=>{
+      oLog('─── KATEGORIJA A: vozila koja su ostala tokom noći ───','info');
+      stayed.forEach(s=>{
+        const dur = Math.round((Date.now()-s.entry)/60000);
+        oLog(`CAT_A ✓ | ${s.plate} | ${s.spot} | ${dur}min | billing UNFREEZE → naplata nastavlja`,'ok');
+        addLog(`CAT_A | ${s.plate} | ${s.spot} | ostalo | billing unfreeze`,'ok','log-body');
+      });
+      // Dodaj u reconcile tabelu
+      appendReconcile(
+        `<div style="margin-bottom:6px"><span class="tag tag-g">Kategorija A — ostala tokom noći (${stayed.length})</span></div>` +
+        stayed.map(s=>{
+          const dur=Math.round((Date.now()-s.entry)/60000);
+          return `<div style="font-size:11px;padding:5px 8px;border-bottom:1px solid var(--border);color:var(--sub);display:flex;justify-content:space-between;align-items:center">
+            <span><b style="color:var(--text)">${s.plate}</b> · ${s.spot}</span>
+            <span style="display:flex;gap:6px;align-items:center">
+              <span style="color:var(--muted)">${dur}min</span>
+              <span class="tag tag-g">billing unfreeze</span>
+            </span></div>`;
+        }).join('')
+      );
+    }},
+
+    // ── Kategorija B: otišla tokom gašenja ────────────────────────
+    {t:5400, fn:()=>{
+      oLog('─── KATEGORIJA B: vozila koja su otišla tokom gašenja ───','warn');
+      left.forEach(s=>{
+        oLog(`CAT_B ⚠ | ${s.plate} | ${s.spot} | nije pronađeno jutros | dug 150 RSD sačuvan`,'warn');
+        addLog(`CAT_B | ${s.plate} | otišlo tokom noći | dug 150 RSD`,'warn','log-body');
+        const v=DB.vehicles[s.plate]; if(v) v.debt+=150;
+        // Oslobodi spot
+        const spot=DB.spots.find(sp=>sp.id===s.spot);
+        if(spot){ spot.status='free'; spot.plate=null; spot.entry=null; }
+      });
+      renderMap();
+      appendReconcile(
+        `<div style="margin:10px 0 6px"><span class="tag tag-y">Kategorija B — otišla tokom noći (${left.length})</span></div>` +
+        left.map(s=>`<div style="font-size:11px;padding:5px 8px;border-bottom:1px solid var(--border);color:var(--sub);display:flex;justify-content:space-between;align-items:center">
+          <span><b style="color:var(--text)">${s.plate}</b> · ${s.spot}</span>
+          <span style="display:flex;gap:6px;align-items:center">
+            <span style="color:var(--red)">dug 150 RSD</span>
+            <span class="tag tag-y">naplata pri sledećoj poseti</span>
+          </span></div>`).join('')
+      );
+    }},
+
+    // ── Kategorija C: nova vozila tokom gašenja ───────────────────
+    {t:6000, fn:()=>{
+      oLog('─── KATEGORIJA C: vozila koja su ušla tokom gašenja ───','warn');
+      newArr.forEach(v=>{
+        oLog(`CAT_C ⚠ | ${v.plate} | ${v.spot} | nije evidentirano pri ulasku | amnestija`,'warn');
+        addLog(`CAT_C | ${v.plate} | ušlo tokom noći | amnestija`,'warn','log-body');
+        // Dodaj kao sesiju
+        const spot=DB.spots.find(sp=>sp.id===v.spot);
+        if(spot && spot.status==='free'){
+          spot.status='session'; spot.plate=v.plate; spot.entry=v.entry;
+          DB.sessions.push({plate:v.plate,spot:v.spot,entry:v.entry,status:'active'});
+        }
+      });
+      renderMap(); renderSessions();
+      appendReconcile(
+        `<div style="margin:10px 0 6px"><span class="tag tag-b">Kategorija C — ušla tokom noći (${newArr.length})</span></div>` +
+        newArr.map(v=>`<div style="font-size:11px;padding:5px 8px;border-bottom:1px solid var(--border);color:var(--sub);display:flex;justify-content:space-between;align-items:center">
+          <span><b style="color:var(--text)">${v.plate}</b> · ${v.spot}</span>
+          <span style="display:flex;gap:6px;align-items:center">
+            <span style="color:var(--accent)">evidentirano jutros</span>
+            <span class="tag tag-b">amnestija</span>
+          </span></div>`).join('')
+      );
+    }},
+
+    // ── Završetak ─────────────────────────────────────────────────
+    {t:6600, fn:()=>{
+      oLog('BILLING_UNFREEZE | naplata aktivna za sva CAT_A vozila','ok');
+      addLog('BILLING_UNFREEZE | naplata aktivna','ok','log-body');
+    }},
+    {t:7000, fn:()=>{
+      outageActive=false; SYS.power=true; SYS.planned=false;
+      // Sve kamere nazad u normalan online mod
+      DB.cameras.forEach(c=>{ c.status='online'; delete c.failure_type; });
+      SYS.offlineCams=[];
+      renderCamGrid();
+      document.getElementById('btn-outage').disabled=false;
+      document.getElementById('btn-planned').disabled=false;
+      document.getElementById('btn-restore').disabled=true;
+      document.getElementById('btn-recover').disabled=true;
+      setOutageUI('Sistem aktivan','Jutarnji recovery završen — normalan rad','outage-ok','var(--green)','tag-g','NORMALAN RAD');
+      updateSysBadge(); renderMap(); renderSessions();
+      oLog('MORNING_RECOVERY_DONE | sistem u potpunosti operativan','ok');
+      addLog('RECOVERY_DONE | normalan rad','ok','log-body');
+      // Vrati fotoćeliju i zatvori rampu
+      setPhotocell(true);
+      barrierOpen=false;
+      document.getElementById('barrier-arm').classList.remove('open');
+      document.getElementById('barrier-dot').style.background='var(--red)';
+      document.getElementById('barrier-tag').className='tag tag-r';
+      document.getElementById('barrier-tag').textContent='ZATVORENA';
+      document.getElementById('barrier-status-text').textContent='ZATVORENA';
+      document.getElementById('barrier-status-text').style.color='var(--red)';
+      document.getElementById('barrier-light').setAttribute('fill','var(--red)');
+      // Odblokira ANPR unos ako je bio blokiran
+      document.getElementById('upload-zone').style.opacity='';
+      document.getElementById('upload-zone').style.pointerEvents='';
+      updateStats();
+      appendReconcile(
+        `<div style="margin-top:12px;padding:8px 10px;background:rgba(46,194,126,.08);border:1px solid rgba(46,194,126,.25);border-radius:6px;font-size:11px;color:var(--green)">
+          ✓ Recovery završen · A:${stayed.length} billing unfreeze · B:${left.length} dug sačuvan · C:${newArr.length} amnestija
+        </div>`
+      );
+    }},
+  ];
+  steps.forEach(s=>setTimeout(s.fn, s.t));
+}
+
+/* ════════════════════════════════════════════
+   INIT
+════════════════════════════════════════════ */
+renderMap(); renderSessions(); renderCamGrid(); updateSysBadge();
+
+addLog('SYSTEM_START | svi servisi aktivni','ok');
+addLog('MQTT_BROKER | Mosquitto online | port:1883','info');
+addLog('WATCHDOG | aktivan | interval:8s','info');
+DB.sessions.filter(s=>s.status==='active').forEach(s=>
+  addLog(`SESSION_ACTIVE | ${s.plate} | ${s.spot} | od ${fmt(s.entry)}`,'ok')
+);
+
+// Live duration update
+setInterval(()=>{ renderSessions(); renderMap(); }, 30000);
 </script>
 </body>
 </html>
