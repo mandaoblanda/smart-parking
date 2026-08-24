@@ -587,6 +587,7 @@ barrier: {
     'Česta manuelna otvaranja u kratkim intervalima → forenzički signal',
     'Fotoćelija prekinuta bez prolaza → sumnjiv događaj, alarm',
     'Watchdog na motoru: ako se ne vrati signal OK → alarm servisu',
+    'U produkciji bi se koristio OpenALPR — open source ANPR engine koji radi lokalno na RPi kontroleru, latencija < 100ms, bez cloud poziva i bez troškova. U simulaciji koristimo Claude Vision API jer OpenALPR zahteva instalaciju na serveru i ne može da radi direktno u browseru.',
   ],
   forensic:'09:14:02 | BARRIER_ENTRY | OPEN  | plate:BG123AB | auth:reservation\n09:14:07 | BARRIER_ENTRY | CLOSE | auto | beam:clear\n09:14:09 | BARRIER_ENTRY | MANUAL_OPEN | admin:user_01 | reason:guest',
   sim: 'barrier-sim'
